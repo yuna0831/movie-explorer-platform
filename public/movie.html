@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Movie Details</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&family=Poppins&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', 'Noto Sans KR', sans-serif;
+      font-weight: 400;
+      background-color: #0e0e0e;
+      color: #fff;
+    }
+
+    h2 {
+      border-bottom: 1px solid #333;
+      padding-bottom: 5px;
+      margin-top: 40px;
+      color: #ff4757;
+    }
+
+    
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+    #heroPoster {
+      margin-right: 10px;
+    }
+
+    #heroSection {
+      max-width: 1070px;
+      display: flex;
+      gap: 30px;
+      align-items: flex-start; 
+      padding: 40px 20px;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-color: #9c9797;
+      background-blend-mode: multiply;
+      margin: 0 auto;
+    }
+
+
+#heroSection > div:first-child {
+  flex: none; /* 고정 크기 */
+  width: 240px; /* 포스터 너비 고정 */
+}
+
+#heroSection > div:last-child {
+  flex: 1; /* 텍스트만 유동 크기 */
+}
+
+    #heroPoster {
+      width: 100%;
+      max-width: 240px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+    }
+
+    #heroTitle {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
+    #heroMeta {
+      color: #ccc;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    #heroOverview {
+      line-height: 1.6;
+      color: #eee;
+    }
+
+    
+    
+
+    
+
+
+
+    #reviewSection {
+      margin-top: 20px;
+      background-color: #1a1a1a;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    #reviewForm textarea, #reviewForm select {
+      background-color: #222;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 6px;
+      font-size: 14px;
+      padding: 8px;
+    }
+
+    #reviewForm button {
+      background-color: #ff4757;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      padding: 6px 14px;
+      cursor: pointer;
+    }
+
+    #photos img {
+      transition: transform 0.3s ease;
+    }
+
+    #photos img:hover {
+      transform: scale(1.05);
+    }
+
+    #lightbox {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    #lightbox img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 10px;
+    }
+
+    #similarMovies {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 10px 0;
+  scroll-behavior: smooth;
+}
+
+.movie-slide {
+  flex: 0 0 auto;
+  width: 180px;
+  text-align: center;
+  background-color: #1e1e1e;
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transition: transform 0.3s ease;
+}
+
+.movie-slide img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.movie-slide:hover {
+  transform: scale(1.05);
+}
+
+.movie-slide p {
+  margin-top: 8px;
+  font-size: 15px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+
+    #credits {
+      margin-top: 10px;
+      background-color: #1a1a1a;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    #castCrewHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .view-all-link {
+    font-size: 14px;
+    color: #ff4757;
+    text-decoration: none;
+  }
+  .view-all-link:hover {
+    text-decoration: underline;
+  }
+
+  #credits-carousel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .carousel-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+
+  .carousel-btn {
+    background-color: transparent;
+    color: white;
+    font-size: 24px;
+    border: none;
+    cursor: pointer;
+  }
+
+  .carousel-track-wrapper {
+    overflow: hidden;
+    width: 100%;
+  }
+
+  
+
+  .carousel-track {
+  display: flex;
+  gap: 12px;
+  transition: transform 0.3s ease;
+  padding: 10px 0;
+}
+
+
+.carousel-track li {
+  list-style: none;
+  flex: 0 0 auto;
+  text-align: center;
+  width: 100px;
+  margin-right: 12px;
+}
+
+.carousel-track li img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+  background-color: #333;
+}
+
+  .person {
+    flex: none;
+    width: 100px;
+    text-align: center;
+    color: #ddd;
+  }
+
+  
+.person img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.prev-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.next-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* 사진 트랙에서만 적용되는 스타일 */
+#photoTrack.carousel-track {
+  display: flex;
+  gap: 16px; /* ✅ 사진 사이 간격 명확히 줌 */
+}
+
+#photoTrack li {
+  list-style: none;
+  flex: 0 0 auto;
+  width: 200px;         /* 이미지 크기에 맞춤 */
+}
+
+#photoTrack li img {
+  width: 100%;          /* li에 맞게 이미지 채움 */
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+
+/* 공통 버튼 스타일 */
+.hero-btn {
+  margin-top: 20px;
+  margin-right: 10px;
+  padding: 10px 18px;
+  font-size: 14px;
+  background-color: transparent;
+  border: 2px solid #ff4757;
+  border-radius: 6px;
+  color: #ff4757;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 호버 효과 */
+.hero-btn:hover {
+  background-color: #ff4757;
+  color: #fff;
+}
+
+
+.prev-btn i, .next-btn i {
+  pointer-events: none;
+}
+
+.prev-btn, .next-btn {
+  background-color: transparent;
+  border: none;
+  font-size: 22px;
+  color: #ff4757;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  padding: 6px;
+}
+
+.prev-btn:hover, .next-btn:hover {
+  transform: scale(1.2);
+}
+
+
+#reviewList {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 10px 0;
+  scroll-behavior: smooth;
+}
+
+.review-card {
+  flex: 0 0 auto;
+  background-color: #1f1f1f;
+  border-radius: 10px;
+  padding: 15px;
+  width: 250px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  color: #fff;
+}
+
+.review-card h4 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: #ff6b81;
+}
+
+.review-card .rating {
+  color: #ffc107;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.review-card p {
+  font-size: 14px;
+  color: #ddd;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+#reviewSection {
+  margin-top: 30px;
+}
+
+.review-form {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.review-form textarea {
+  width: 100%;
+  padding: 12px;
+  margin: 0; /* 불필요한 여백 제거 */
+  background-color: #2a2a2a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  resize: vertical;
+  box-sizing: border-box; /* padding 포함한 너비 처리 */
+}
+
+
+.rating-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.star-rating {
+  display: flex;
+  gap: 5px;
+}
+
+.star-rating input {
+  display: none;
+}
+
+.star-rating label {
+  font-size: 22px;
+  color: #444;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.star-rating input:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+  color: #facc15;
+}
+
+.submit-review-btn {
+  align-self: flex-start;
+  background-color: #f97316;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  font-size: 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.submit-review-btn:hover {
+  background-color: #fb923c;
+}
+
+
+.star-rating {
+  direction: rtl;
+  display: flex;
+  gap: 5px;
+  font-size: 22px;
+  margin-top: 8px;
+}
+
+.star-rating input {
+  display: none;
+}
+
+.star-rating label {
+  color: #444;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.star-rating input:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+  color: #ffc107; /* gold */
+}
+
+
+/* header responsive (elements movement)*/
+@media screen and (max-width: 768px) {
+  .header-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .nav-user {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .search-bar {
+    margin: 10px 0;
+    width: 100%;
+  }
+}
+
+nav a:hover {
+  transform: translateY(-3px);
+  color: #ff6b81;
+}
+
+
+
+  </style>
+  
+</head>
+
+
+<body>
+  <!-- Trailer Lightbox -->
+<div id="trailerLightbox" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center;">
+  <div style="position: relative; width: 90%; max-width: 900px;">
+    <button onclick="closeTrailer()" style="position: absolute; top: -40px; right: 0; font-size: 28px; color: white; background: none; border: none; cursor: pointer;">✖</button>
+    <iframe id="trailerFrame" width="100%" height="500" frameborder="0" allowfullscreen
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+    </iframe>
+  </div>
+</div>
+  
+
+  <div id="header"></div>
+  <div id="searchHistory" style="display: none;"></div>
+
+  <!-- 🎬 Hero Section -->
+  <section id="heroSection">
+    <div class="poster-box">
+      <img id="heroPoster" src="">
+    </div>
+    <div class="text-box">
+      <h1 id="heroTitle"></h1>
+      <p id="heroMeta"></p>
+      <p id="heroOverview"></p>
+      
+      <button id="watchlistBtn" class="hero-btn"><i class="fas fa-plus"></i> Add to Watchlist</button>
+      <button id="trailerBtn" class="hero-btn"><i class="fas fa-play"></i> Watch Trailer</button>
+
+      <div id="trailer" style="margin-top: 20px;"></div>
+    </div>
+  </section>
+
+  <!-- 기존 정보는 숨겨둠 -->
+  <div id="movieInfo" style="display: none;"></div>
+
+  <div class="container">
+    
+
+    <h3 style="display: flex; justify-content: space-between; align-items: center;">
+      CAST & CREW
+      <a id="viewAllCastBtn" class="view-all" style="font-size: 14px; color: white; text-decoration: none;">View All</a>
+</h3>
+    
+    <div class="carousel-section">
+      <button class="prev-btn" data-target="creditsTrack">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <div class="carousel-track-wrapper">
+        <ul class="carousel-track" id="creditsTrack">
+          <!-- JS로 15명의 <li> 요소를 동적으로 생성 -->
+        </ul>
+      </div>
+      <button class="next-btn" data-target="creditsTrack">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+    
+    <h3>REVIEWS</h3>
+
+<div id="reviewSection">
+  <div id="reviewList"></div>
+
+  <div id="reviewForm" class="review-form">
+    <textarea id="reviewText" placeholder="Write your review..." rows="4"></textarea>
+
+    <div class="rating-row">
+      <label for="rating">Rating:</label>
+      <div class="star-rating">
+        <input type="radio" id="star5" name="rating" value="5"><label for="star5" title="5 stars"><i class="fa-solid fa-star"></i></label>
+        <input type="radio" id="star4" name="rating" value="4"><label for="star4" title="4 stars"><i class="fa-solid fa-star"></i></label>
+        <input type="radio" id="star3" name="rating" value="3"><label for="star3" title="3 stars"><i class="fa-solid fa-star"></i></label>
+        <input type="radio" id="star2" name="rating" value="2"><label for="star2" title="2 stars"><i class="fa-solid fa-star"></i></label>
+        <input type="radio" id="star1" name="rating" value="1"><label for="star1" title="1 star"><i class="fa-solid fa-star"></i></label>
+      </div>
+    </div>
+
+    <button class="submit-review-btn" onclick="submitReview()">Submit Review</button>
+  </div>
+</div>
+
+
+    <h3>PHOTOS</h3>
+    <div class="carousel-section">
+      <button class="prev-btn" data-target="photoTrack">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <div class="carousel-track-wrapper">
+        <ul class="carousel-track" id="photoTrack">
+          <!-- JS로 이미지 <li> 요소를 동적으로 생성 -->
+        </ul>
+      </div>
+      
+<button class="next-btn" data-target="photoTrack">
+  <i class="fas fa-chevron-right"></i>
+</button>
+    </div>
+
+    <h3>SIMILAR MOVIES</h3>
+    <div id="similarMovies"></div>
+  </div>
+
+  <!-- Lightbox -->
+  <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); justify-content: center; align-items: center; z-index: 1000;">
+    <img id="lightboxImage" src="" style="max-width: 90%; max-height: 90%; border-radius: 10px;">
+  </div>
+
+  <!-- Header Load -->
+  <script>
+    fetch("/header.html")
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById("header").innerHTML = html;
+
+        const script = document.createElement('script');
+        script.src = '/header.js';
+        script.onload = () => {
+          if (typeof checkUserStatus === "function") checkUserStatus();
+
+          const userDropdown = document.getElementById("userDropdown");
+          const logoutBox = userDropdown?.querySelector(".logout-hidden");
+
+          if (userDropdown && logoutBox) {
+            userDropdown.addEventListener("mouseenter", () => logoutBox.style.display = "block");
+            userDropdown.addEventListener("mouseleave", () => logoutBox.style.display = "none");
+          }
+        };
+        document.body.appendChild(script);
+      });
+  </script>
+ 
+
+  <!-- Your movie.js already contains loadMovieDetails -->
+
+  <script src="movie.js"></script>
+  
+  
+  
+
+
+
+</body>
+
+</html>
