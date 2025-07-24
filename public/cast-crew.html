@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cast & Crew</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&family=Poppins&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', 'Noto Sans KR', sans-serif;
+      background-color: #0e0e0e;
+      color: #fff;
+    }
+
+    #header {
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 36px;
+      margin-top: 20px;
+      letter-spacing: 1px;
+    }
+
+    .section {
+      margin: 40px auto;
+      max-width: 1100px;
+      padding: 0 20px;
+    }
+
+    .section h2 {
+      font-size: 24px;
+      margin-bottom: 15px;
+      color: #ff4757;
+    }
+
+    .people-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 20px;
+    }
+
+    .person {
+      background-color: #1a1a1a;
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .person:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+    }
+
+    .person img {
+      width: 100px;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    .person div {
+      font-size: 12px;
+      color: #ddd;
+      line-height: 1.4;
+    }
+
+    .person strong {
+      display: block;
+      color: #fff;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 28px;
+      }
+      .section h2 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="header"></div>
+  <div class="container">
+    <div id="searchHistory" style="display: none;"></div>
+
+  <h1><i class="fa-solid fa-clapperboard"></i> Cast & Crew</h1>
+
+  <div class="section">
+    <h2><i class="fa-solid fa-masks-theater"></i> Cast</h2>
+    <div id="castList" class="people-grid"></div>
+  </div>
+
+  <div class="section">
+    <h2><i class="fa-solid fa-video"></i> Crew</h2>
+    <div id="crewList" class="people-grid"></div>
+  </div>
+
+  <script>
+    const movieId = new URLSearchParams(location.search).get("id");
+    console.log(movieId);
+
+    async function loadFullCredits() {
+      const res = await fetch(`/api/movies/${movieId}/credits`);
+
+      const data = await res.json();
+
+      const castHTML = data.cast.map(person => {
+        const img = person.profile_path
+          ? `https://image.tmdb.org/t/p/w185${person.profile_path}`
+          : '/images/placeholder.png';
+        return `
+          <div class="person">
+            <img src="${img}" alt="${person.name}">
+            <div><strong>${person.name}</strong></div>
+            <div>as ${person.character}</div>
+          </div>
+        `;
+      }).join("");
+
+      const crewHTML = data.crew.map(person => {
+        const img = person.profile_path
+          ? `https://image.tmdb.org/t/p/w185${person.profile_path}`
+          : '/images/placeholder.png';
+        return `
+          <div class="person">
+            <img src="${img}" alt="${person.name}">
+            <div><strong>${person.name}</strong></div>
+            <div>${person.job}</div>
+          </div>
+        `;
+      }).join("");
+
+      document.getElementById("castList").innerHTML = castHTML;
+      document.getElementById("crewList").innerHTML = crewHTML;
+    }
+
+    loadFullCredits();
+  </script>
+
+  <script>
+    fetch("/header.html")
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById("header").innerHTML = html;
+
+        const script = document.createElement('script');
+        script.src = '/header.js';
+        script.onload = () => {
+          if (typeof checkUserStatus === "function") checkUserStatus();
+
+          const userDropdown = document.getElementById("userDropdown");
+          const logoutBox = userDropdown?.querySelector(".logout-hidden");
+
+          if (userDropdown && logoutBox) {
+            userDropdown.addEventListener("mouseenter", () => logoutBox.style.display = "block");
+            userDropdown.addEventListener("mouseleave", () => logoutBox.style.display = "none");
+          }
+        };
+        document.body.appendChild(script);
+      });
+  </script>
+</body>
+</html>

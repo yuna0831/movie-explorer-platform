@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Moovy – Smarter ways to search, save, and watch.</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&family=Poppins&display=swap" rel="stylesheet">
+
+  <style>
+   /* ------------------- GLOBAL ------------------- */
+   body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', 'Noto Sans KR', sans-serif;
+      font-weight: 400;
+      background-color: #0e0e0e;
+      color: #fff;
+    }
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 30px 20px;
+}
+
+
+/* ------------------- CAROUSEL ------------------- */
+
+.movie-title {
+  font-family: 'Poppins', 'Noto Sans KR', sans-serif;
+  font-weight: 500;   /* 기본보다 살짝 굵지만 bold보다 덜함 */
+  font-size: 15px;
+  color: #fff;
+  display: block;
+  margin-top: 5px;
+  
+}
+.movie-section {
+  margin-top: 40px;
+}
+
+.movie-section h2 {
+  color: #ff6b81;
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+.movie-section ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.movie-section li {
+  width: 140px;
+  background-color: #1f1f1f;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 0 10px rgba(255, 71, 87, 0.1);
+}
+
+.movie-section img {
+  border-radius: 6px;
+  width: 100%;
+}
+
+.carousel-section {
+  position: relative;
+}
+
+.carousel-section h2 {
+  color: white;
+  margin-bottom: 5px;
+  text-align: left;
+  font-size: 20px;
+}
+
+.carousel-track-wrapper {
+  overflow: hidden;
+  width: 100%;
+}
+
+.carousel-container {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  max-width: 100%;
+  position: relative;
+}
+
+.carousel-track {
+  display: flex;
+  gap: 30px;
+  padding: 0 20px;
+  transition: transform 0.3s ease;
+}
+
+.carousel-track li {
+  list-style: none;
+  flex: 0 0 140px;
+  flex-shrink: 0;
+}
+
+.carousel-track li img {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.carousel-track li:hover {
+  transform: translateY(-5px);
+  color: #ff6b81;
+}
+.prev-btn i, .next-btn i {
+  pointer-events: none;  /* 클릭 시 아이콘만 클릭되는 것 방지 */
+}
+
+.prev-btn, .next-btn {
+  background-color: transparent;
+  border: none;
+  font-size: 24px;
+  color: #ff6b81;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.prev-btn:hover, .next-btn:hover {
+  transform: scale(1.2);
+}
+
+.view-all {
+  color: gray;
+  font-size: 14px;
+  float: right;
+  text-decoration: underline;
+}
+
+/* ------------------- HISTORY ------------------- */
+#searchHistory {
+  color: #ccc;
+  font-size: 13px;
+}
+
+/* ------------------- RESPONSIVE ------------------- */
+@media screen and (max-width: 768px) {
+  .header-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .nav-user {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .search-bar {
+    margin: 10px 0;
+    width: 100%;
+  }
+}
+
+nav a:hover {
+  transform: translateY(-3px);
+  color: #ff6b81;
+}
+
+h2 {
+  font-weight: 500;
+}
+p {
+  font-weight: 400;
+}
+
+
+    
+  </style>
+</head>
+<body>
+
+  <div id="header"></div>
+  
+  
+
+
+  <div class="container">
+    <div id="searchHistory" style="display: none;"></div>
+
+    <div class="carousel-section">
+      <h2>NOW IN THEATERS <a href="/all-movies.html" class="view-all">VIEW ALL MOVIES</a></h2>
+      <div class="carousel-container">
+        <button class="prev-btn" data-target="nowPlayingMovies" style="display: none;">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="carousel-track-wrapper">
+          <ul class="carousel-track" id="nowPlayingMovies"></ul>
+        </div>
+        <button class="next-btn" data-target="nowPlayingMovies">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+    
+    <div class="carousel-section">
+      <h2>COMING SOON <a href="/all-movies.html" class="view-all">VIEW ALL MOVIES</a></h2>
+      <div class="carousel-container">
+        <button class="prev-btn" data-target="upcomingMovies" style="display: none;">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="carousel-track-wrapper">
+          <ul class="carousel-track" id="upcomingMovies"></ul>
+        </div>
+        <button class="next-btn" data-target="upcomingMovies">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div> 
+    </div>
+
+    <div class="carousel-section">
+      <h2>TRENDING PICKS <a href="/all-movies.html" class="view-all">VIEW ALL MOVIES</a></h2>
+      <div class="carousel-container">
+        <button class="prev-btn" data-target="popularMovies" style="display: none;">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="carousel-track-wrapper">
+          <ul class="carousel-track" id="popularMovies"></ul>
+        </div>
+        <button class="next-btn" data-target="popularMovies">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div> 
+    </div>
+
+    
+  </div>
+
+  
+  <script>
+    fetch("/header.html")
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById("header").innerHTML = html;
+        if (typeof checkUserStatus === "function" && document.getElementById("userGreeting")) {
+            checkUserStatus();
+        }
+
+        const userDropdown = document.getElementById("userDropdown");
+        const logoutBox = userDropdown?.querySelector(".logout-hidden");
+
+        if (userDropdown && logoutBox) {
+          userDropdown.addEventListener("mouseenter", () => {
+            logoutBox.style.display = "block";
+        });
+        userDropdown.addEventListener("mouseleave", () => {
+          logoutBox.style.display = "none";
+        });
+      }
+      setupCarouselButtons();
+        
+      });
+  </script>
+
+  
+  <script src="script.js"></script>
+  <script src="/header.js"></script>
+</body>
+</html>
