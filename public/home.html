@@ -235,6 +235,25 @@ p {
       </div> 
     </div>
 
+  
+<!-- 플로팅 버튼 -->
+<div id="chatbot-button" style="position: fixed; bottom: 20px; right: 20px; z-index: 999;">
+  <button onclick="toggleChat()" style="background-color: #f60; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; color: white; border: none;">
+    💬
+  </button>
+</div>
+
+<!-- 채팅창 -->
+<div id="chat-container" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 320px; height: 450px; border: 1px solid #ccc; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 1000;">
+  <div style="background: #f60; color: white; padding: 10px;">MoovyBot: Emotion Picks</div>
+  <div id="chat-log" style="padding: 10px; height: 330px; overflow-y: auto; font-size: 14px; color: black;"></div>
+  <div style="padding: 10px; display: flex;">
+    <input id="chat-input" type="text" placeholder="Tell me how you feel..." style="flex: 1; padding: 5px;">
+    <button onclick="sendMessage()" style="margin-left: 5px;">▶️</button>
+  </div>
+</div>
+
+
     
   </div>
 

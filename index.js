@@ -1,4 +1,5 @@
 require("dotenv").config();
+console.log("OPENAI_API_KEY:", process.env.OPENAI_API_KEY);
 const express = require("express");
 const mysql = require("mysql2");
 const bcrypt = require("bcryptjs");
@@ -558,6 +559,68 @@ app.delete("/api/watchlist/:id", (req, res) => {
     });
 });
 
+
+
+app.post("/api/emotion-recommend", async (req, res) => {
+  const { prompt } = req.body;
+  try {
+    const gptRes = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: `You're a friendly and emotional chatbot named Moovy 🎬.
+            The user will tell you how they're feeling or how their day went.
+            
+            Always respond ONLY in valid JSON format like this:
+            
+            {
+              "response": "Your empathetic or humorous message here",
+              "movies": [
+                { "title": "Movie Title", "overview": "Short summary" },
+                ...
+              ]
+            }
+            
+            Do NOT add any extra text before or after the JSON block.
+            Keep the response natural and warm in tone, not too formal.`
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.5,
+        max_tokens: 300,
+      }),
+    });
+
+    const json = await gptRes.json();
+    const reply = json.choices[0].message.content;
+
+    console.log("💬 GPT raw reply:\n", reply); // 🔍 확인 중요
+
+    // GPT 응답이 JSON 형태인지 안전하게 파싱
+    let parsed;
+    try {
+      parsed = JSON.parse(reply);
+    } catch (e) {
+      console.error("❌ JSON parsing error:", e);
+      return res.status(500).json({ error: "Invalid JSON format from GPT", raw: reply });
+    }
+
+    return res.json(parsed);
+  } catch (err) {
+    console.error("GPT fetch error:", err);
+    return res.status(500).json({ error: "Failed to get GPT response" });
+  }
+});
 
 
 // Start server

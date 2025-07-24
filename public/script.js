@@ -92,15 +92,7 @@ async function displaySectionMovies(endpoint, elementId) {
     const endOfYear = new Date(today.getFullYear(), 11, 31);
 
     const movies = await fetchMultiplePages(endpoint, 3); // 3페이지까지 시도
-    const filteredMovies = endpoint.includes("upcoming")
-        ? movies.filter(movie => {
-            const releaseDate = new Date(movie.release_date);
-            return releaseDate >= today && releaseDate <= endOfYear;
-        })
-        : movies;
-
-    
-
+    const filteredMovies = movies;
 
      // ✅ 중복 제거
      const uniqueMovies = [];
@@ -113,7 +105,7 @@ async function displaySectionMovies(endpoint, elementId) {
      }
 
     
-     
+     console.log('here');
      // 최대 15개만 표시
      uniqueMovies.slice(0,15).forEach(movie => {
         console.log(movie.id);
@@ -207,9 +199,74 @@ function setupCarouselButtons() {
 
 
 
+  function toggleChat() {
+    const chat = document.getElementById("chat-container");
+    const chatLog = document.getElementById("chat-log");
+    const isOpen = chat.style.display === "block";
+    chat.style.display = isOpen ? "none" : "block";
+    if (!isOpen) {
+      setTimeout(() => {
+        chatLog.scrollTop = chatLog.scrollHeight;
+      }, 100);
+    }
+  }
   
-
-
+  window.onload = () => {
+    const chatLog = document.getElementById("chat-log");
+    const welcome = document.createElement("div");
+    welcome.innerHTML = `<strong>🤖 Moovy:</strong> Hi! How's your day? Tell me how you're feeling or what kind of movie you're in the mood for! 🎬`;
+    chatLog.appendChild(welcome);
+  };
+  
+  async function sendMessage() {
+    const input = document.getElementById("chat-input");
+    const chatLog = document.getElementById("chat-log");
+  
+    const userMessage = input.value.trim();
+    if (!userMessage) return;
+  
+    const userDiv = document.createElement("div");
+    userDiv.innerHTML = `<strong>👤 You:</strong> ${userMessage}`;
+    chatLog.appendChild(userDiv);
+    input.value = "";
+  
+    try {
+      const res = await fetch("/api/emotion-recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: userMessage }),
+      });
+  
+      const data = await res.json();
+      if (!res.ok || !data.response || !Array.isArray(data.movies)) {
+        chatLog.innerHTML += `<div><strong>🤖 Moovy:</strong> Sorry, I couldn’t understand. Try again!</div>`;
+        return;
+      }
+  
+      // ✅ GPT 공감 멘트 출력
+      const empathize = document.createElement("div");
+      empathize.style.color = "black";
+      empathize.innerHTML = `<strong>🤖 Moovy:</strong> ${data.response}`;
+      chatLog.appendChild(empathize);
+  
+      // ✅ 영화 추천 리스트 출력
+      data.movies.forEach((movie) => {
+        const movieDiv = document.createElement("div");
+        movieDiv.style.color = "black";
+        movieDiv.innerHTML = `🎬 <strong>${movie.title}</strong><br><em>${movie.overview?.slice(0, 120) || "No overview available."}</em>`;
+        chatLog.appendChild(movieDiv);
+      });
+  
+      chatLog.scrollTop = chatLog.scrollHeight;
+    } catch (err) {
+      console.error("Chatbot error:", err);
+      const errorDiv = document.createElement("div");
+      errorDiv.innerHTML = `<strong>🤖 Moovy:</strong> Oops! Something went wrong.`;
+      chatLog.appendChild(errorDiv);
+    }
+  }
+  
+  
 
 
 window.onload = () => {
