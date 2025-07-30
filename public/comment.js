@@ -45,25 +45,31 @@ async function fetchComments(movieId) {
       div.setAttribute("data-id", comment.id);
     
       div.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <p style="margin: 0;"><strong>${comment.username}</strong> (${new Date(comment.created_at).toLocaleString()})</p>
-          <div style="font-size: 12px; color: #aaa;">
-            ${isOwner ? `
-              <span style="margin-right: 10px; cursor:pointer;" onclick="deleteComment(${comment.id})">Delete</span>
-              ${comment.comment ? `<span style="margin-right: 10px; cursor:pointer;" onclick="startEditComment(${comment.id}, '${safeComment}')">Edit</span>` : ""}
-            ` : ""}
-            <span style="cursor:pointer;" onclick="toggleReplyInput(${comment.id})">Reply</span>
-          </div>
-        </div>
-        ${stars ? `<p style="margin: 4px 0;">Rating: ${stars}</p>` : ""}
-        ${comment.comment ? `<p class="comment-text">${comment.comment}</p>` : ""}
-        <div class="reply-input" id="reply-input-${comment.id}" style="display:none; margin-top:10px;">
-          <textarea id="reply-text-${comment.id}" rows="2" style="width:100%;"></textarea><br>
-          <button onclick="submitReply(${comment.id})">
-            <i class="fas fa-paper-plane"></i> Submit Reply
-          </button>
-        </div>
-      `;
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <p style="margin: 0;"><strong>${comment.username}</strong> (${new Date(comment.created_at).toLocaleString()})</p>
+    <div style="font-size: 12px; color: #aaa;">
+      ${isOwner ? `
+        <span style="margin-right: 10px; cursor:pointer;" onclick="deleteComment(${comment.id})">Delete</span>
+        ${comment.comment ? `<span style="margin-right: 10px; cursor:pointer;" onclick="startEditComment(${comment.id}, '${safeComment}')">Edit</span>` : ""}
+      ` : ""}
+      <span style="cursor:pointer;" onclick="toggleReplyInput(${comment.id})">Reply</span>
+    </div>
+  </div>
+  ${stars ? `<p style="margin: 4px 0;">Rating: ${stars}</p>` : ""}
+  ${comment.emotion ? `
+  <div style="margin: 4px 0;">
+    ${comment.emotion.split(',').map(e => `<span class="emotion-tag">${e}</span>`).join(' ')}
+  </div>` : ""
+}
+  ${comment.comment ? `<p class="comment-text">${comment.comment}</p>` : ""}
+  <div class="reply-input" id="reply-input-${comment.id}" style="display:none; margin-top:10px;">
+    <textarea id="reply-text-${comment.id}" rows="2" style="width:100%;"></textarea><br>
+    <button onclick="submitReply(${comment.id})">
+      <i class="fas fa-paper-plane"></i> Submit Reply
+    </button>
+  </div>
+`;
+
     
       container.appendChild(div);
       await fetchReplies(comment.id, div);
@@ -234,34 +240,37 @@ async function submitEditComment(commentId) {
 }
 
 
-
 async function submitComment() {
-    const movieId = localStorage.getItem("currentMovieId");
-    const username = localStorage.getItem("username");
-    const token = localStorage.getItem("token");
-    const comment = document.getElementById("commentInput").value.trim();
-    const rating = parseInt(document.getElementById("ratingSelect").value);
+  const movieId = localStorage.getItem("currentMovieId");
+  const username = localStorage.getItem("username");
+  const token = localStorage.getItem("token");
+  const comment = document.getElementById("commentInput").value.trim();
+  const rating = parseInt(document.getElementById("ratingSelect").value);
+  const emotion = document.getElementById("selectedEmotion").value; // 감정 값 추가
 
-    if (!username || !token) return alert("Please log in first.");
-    if (!comment && !rating) return alert("Please write a comment or give a rating.");
+  if (!username || !token) return alert("Please log in first.");
+  if (!comment && !rating) return alert("Please write a comment or give a rating.");
 
-    const res = await fetch("/api/comments", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ movie_id: movieId, username, comment, rating })
-    });
+  const res = await fetch("/api/comments", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ movie_id: movieId, username, comment, rating, emotion: emotions }) // 감정 포함
+  });
 
-    const data = await res.json();
-    if (res.ok) {
-        document.getElementById("commentInput").value = "";
-        document.getElementById("ratingSelect").value = "";
-        fetchComments(movieId);
-    } else {
-        alert(data.message || "Failed to submit comment");
-    }
+  const data = await res.json();
+  if (res.ok) {
+      document.getElementById("commentInput").value = "";
+      document.getElementById("ratingSelect").value = "";
+      document.getElementById("selectedEmotion").value = ""; // 감정 초기화
+      document.querySelectorAll(".emotion-btn").forEach(btn => btn.classList.remove("selected")); // 버튼 상태 초기화
+      fetchComments(movieId);
+  } else {
+      alert(data.message || "Failed to submit comment");
+  }
 }
+
 async function deleteComment(commentId) {
     if (!confirm("Are you sure you want to delete this comment?")) return;
 

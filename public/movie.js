@@ -120,28 +120,38 @@ async function loadHero() {
 
       async function loadSimilarMovies() {
         try {
-          // 1️⃣ 키워드 가져오기
-          const keywordRes = await fetch(`/api/movie/${movieId}/keywords`);
-          const keywordData = await keywordRes.json();
-          const keywords = keywordData.keywords;
+          // 1️⃣ 키워드 + 장르 정보 가져오기
+          const [keywordRes, detailRes] = await Promise.all([
+            fetch(`/api/movie/${movieId}/keywords`),
+            fetch(`/api/movie/${movieId}`) // 이건 movie detail endpoint
+          ]);
       
-          if (!keywords || keywords.length === 0) {
+          const keywordData = await keywordRes.json();
+          const movieDetail = await detailRes.json();
+      
+          const keywords = keywordData.keywords || [];
+          const genres = movieDetail.genres || [];
+      
+          if (keywords.length === 0 && genres.length === 0) {
             document.getElementById("similarMovies").innerHTML = "<p>No similar movies found.</p>";
             return;
           }
       
-          // 2️⃣ 첫 번째 키워드를 사용 (또는 랜덤하게 선택 가능)
-          const keywordId = keywords[0].id;
+          const keywordIds = keywords.slice(0, 2).map(k => k.id).join(',');
+          const genreIds = genres.slice(0, 2).map(g => g.id).join(',');
       
-          // 3️⃣ 해당 키워드로 영화 검색
-          const discoverRes = await fetch(`/api/discover?with_keywords=${keywordId}`);
+          // 2️⃣ Discover API에서 조건 조합 추천
+          const discoverRes = await fetch(`/api/discover?with_keywords=${keywordIds}&with_genres=${genreIds}&sort_by=popularity.desc`);
           const discoverData = await discoverRes.json();
       
-          // 4️⃣ 현재 영화 제외하고 최대 8개 표시
-          const similar = discoverData.results
-            .filter(m => m.id !== movieId)
-            .slice(1, 9)
+          const similar = discoverData.results.filter(m => m.id !== movieId).slice(0, 8);   
       
+          if (similar.length === 0) {
+            document.getElementById("similarMovies").innerHTML = "<p>No similar movies found.</p>";
+            return;
+          }
+      
+          // 3️⃣ 렌더링
           document.getElementById("similarMovies").innerHTML = similar.map(movie => {
             const poster = movie.poster_path
               ? `https://image.tmdb.org/t/p/w300${movie.poster_path}`
@@ -155,6 +165,7 @@ async function loadHero() {
               </div>
             `;
           }).join("");
+      
         } catch (err) {
           console.error("Failed to load similar movies:", err);
           document.getElementById("similarMovies").innerHTML = "<p>Failed to load similar movies.</p>";

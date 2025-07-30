@@ -21,6 +21,7 @@
   max-width: 1100px;
   margin: 0 auto;
   padding: 30px 20px;
+  position: relative;
 }
 
 
@@ -145,6 +146,190 @@
   font-size: 13px;
 }
 
+/* ------------------- CHATBOT ------------------- */
+#chat-container {
+  display: none;
+  position: fixed;   /* ✅ fixed → absolute */
+  bottom: 100px;
+  right: 0;            /* ✅ container 기준 우측 */
+  width: 380px;
+  height: 520px;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 1000;
+  background: #f9f9f9;
+  font-family: 'Poppins', sans-serif;
+  color: #333;
+  border: 2px solid #f97316;
+}
+
+  #chat-header {
+    background: #f97316;
+    padding: 12px 16px;
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+  }
+
+  #chat-log {
+    padding: 15px;
+    height: 360px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .chat-bubble {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 20px;
+    position: relative;
+    font-size: 14px;
+    line-height: 1.4;
+    display: inline-block;
+    word-wrap: break-word;
+  }
+
+  .user-message {
+    background: #e0e0e0;
+    color: #000;
+    align-self: flex-end;
+    border-bottom-right-radius: 0;
+  }
+
+  .bot-message {
+    background: #ffedd5;
+    color: #111827;
+    align-self: flex-start;
+    border-bottom-left-radius: 0;
+  }
+
+  #chat-input-area {
+    padding: 12px;
+    display: flex;
+    gap: 10px;
+    border-top: 1px solid #ddd;
+  }
+
+  #chat-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+  }
+
+  #send-btn {
+    padding: 10px 15px;
+    background: #f97316;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  #chatbot-button {
+  position: fixed;
+  bottom: 25px;
+  right: 20px;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: floaty 3s ease-in-out infinite;
+}
+
+
+
+  #chatbot-button button:hover img {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
+}
+#chatbot-button button {
+  background-color: #1a1a1a;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s;
+}
+
+
+#chatbot-button button:hover {
+  transform: scale(1.1);
+}
+#chatbot-label {
+  color: white;
+  margin-bottom: 8px;
+  font-size: 16px;
+  background: rgba(0,0,0,0.6);
+  padding: 6px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+#chatbot-button img {
+  width: 80px;
+  height: 80px;
+}
+
+.mood-section {
+  margin-top: 50px;
+  text-align: center;
+}
+
+.mood-section h2 {
+  color: #f97316;
+  font-size: 22px;
+  margin-bottom: 20px;
+}
+
+.mood-cube-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .mood-cube {
+      background-color: #1a1a1a;
+      border-radius: 16px;
+      padding: 25px 15px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s, background-color 0.3s;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+    }
+
+    .mood-cube:hover {
+      background-color: #272727;
+      transform: translateY(-5px);
+    }
+
+    .mood-icon {
+      font-size: 36px;
+      color: #f97316;
+      margin-bottom: 12px;
+    }
+
+    .mood-label {
+      font-size: 15px;
+      color: #fff;
+      margin: 0;
+    }
+
+@keyframes floaty {
+  0%   { transform: translateX(-50%) translateY(0); }
+  50%  { transform: translateX(-50%) translateY(-10px); }
+  100% { transform: translateX(-50%) translateY(0); }
+}
 /* ------------------- RESPONSIVE ------------------- */
 @media screen and (max-width: 768px) {
   .header-container {
@@ -161,6 +346,20 @@
   .search-bar {
     margin: 10px 0;
     width: 100%;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  #chatbot-button {
+    right: 10px;
+    bottom: 20px;
+  }
+
+  #chat-container {
+    right: 10px;
+    bottom: 90px;
+    width: 90%;
+    max-width: 360px;
   }
 }
 
@@ -233,25 +432,93 @@ p {
           <i class="fas fa-chevron-right"></i>
         </button>
       </div> 
+
     </div>
 
-  
-<!-- 플로팅 버튼 -->
-<div id="chatbot-button" style="position: fixed; bottom: 20px; right: 20px; z-index: 999;">
-  <button onclick="toggleChat()" style="background-color: #f60; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; color: white; border: none;">
-    💬
+    <div class="mood-section">
+      <h2 style="color: #f97316; text-align: center; margin-top: 60px;">Moovy's Emotion + Situation Cubes</h2>
+      <div class="mood-cube-container">
+        <div class="mood-cube" onclick="location.href='/cube.html?cube=lonely-night'">
+          <i class="fa-solid fa-moon mood-icon"></i>
+          <p class="mood-label">After a Breakup, Home Alone</p>
+        </div>
+        <div class="mood-cube" onclick="location.href='/cube.html?cube=stress-monday'">
+          <i class="fa-solid fa-briefcase mood-icon"></i>
+          <p class="mood-label">Stressful Monday Night</p>
+        </div>
+        <div class="mood-cube" onclick="location.href='/cube.html?cube=happy-friends'">
+          <i class="fa-solid fa-face-laugh-squint mood-icon"></i>
+          <p class="mood-label">Laugh with Friends</p>
+        </div>
+        <div class="mood-cube" onclick="location.href='/cube.html?cube=sleepless-study'">
+          <i class="fa-solid fa-clock mood-icon"></i>
+          <p class="mood-label">Sleepless Study Night</p>
+        </div>
+        <div class="mood-cube" onclick="location.href='/cube.html?cube=rainy-alone'">
+          <i class="fa-solid fa-cloud-rain mood-icon"></i>
+          <p class="mood-label">Rainy Day by Yourself</p>
+        </div>
+        <div class="mood-cube" onclick="location.href='/cube.html?cube=overwhelmed-week'">
+          <i class="fa-solid fa-wind mood-icon"></i>
+          <p class="mood-label">Overwhelmed by the Week</p>
+        </div>
+        <div class="mood-cube" onclick="location.href='/cube.html?cube=motivation-monday'">
+          <i class="fa-solid fa-sun mood-icon"></i>
+          <p class="mood-label">Monday Motivation Needed</p>
+        </div>
+        <div class="mood-cube" onclick="location.href='/cube.html?cube=night-anxiety'">
+          <i class="fa-solid fa-star-and-crescent mood-icon"></i>
+          <p class="mood-label">Late Night Anxiety</p>
+        </div>
+        <div class="mood-cube" onclick="location.href='/cube.html?cube=post-social-fatigue'">
+          <i class="fa-solid fa-face-meh mood-icon"></i>
+          <p class="mood-label">Drained After Socializing</p>
+        </div>
+        <div class="mood-cube" onclick="location.href='/cube.html?cube=nostalgic-feels'">
+          <i class="fa-solid fa-film mood-icon"></i>
+          <p class="mood-label">Feeling Nostalgic</p>
+        </div>
+        <div class="mood-cube" onclick="location.href='/cube.html?cube=cozy-sunday'">
+          <i class="fa-solid fa-mug-hot mood-icon"></i>
+          <p class="mood-label">Cozy Sunday Afternoon</p>
+        </div>
+        <div class="mood-cube" onclick="location.href='/cube.html?cube=hopeless-romantic'">
+          <i class="fa-solid fa-heart-crack mood-icon"></i>
+          <p class="mood-label">Hopeless Romantic Mood</p>
+        </div>
+        <div class="mood-cube" onclick="location.href='/cube.html?cube=solo-meal'">
+          <i class="fa-solid fa-utensils mood-icon"></i>
+          <p class="mood-label">Eating Alone Tonight</p>
+        </div>
+        <div class="mood-cube" onclick="location.href='/cube.html?cube=bad-day'">
+          <i class="fa-solid fa-face-sad-tear mood-icon"></i>
+          <p class="mood-label">After a Really Bad Day</p>
+        </div>
+        <div class="mood-cube" onclick="location.href='/cube.html?cube=friday-reset'">
+          <i class="fa-solid fa-rotate mood-icon"></i>
+          <p class="mood-label">Resetting on a Friday Night</p>
+        </div>
+      </div>
+    
+
+ <!-- 플로팅 버튼 -->
+ <div id="chatbot-button">
+  <div id="chatbot-label">Chat with MoovyBot</div>
+  <button onclick="toggleChat()">
+    <i class="fas fa-robot fa-lg" style="color: #f97316;"></i>
   </button>
 </div>
 
 <!-- 채팅창 -->
-<div id="chat-container" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 320px; height: 450px; border: 1px solid #ccc; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 1000;">
-  <div style="background: #f60; color: white; padding: 10px;">MoovyBot: Emotion Picks</div>
-  <div id="chat-log" style="padding: 10px; height: 330px; overflow-y: auto; font-size: 14px; color: black;"></div>
-  <div style="padding: 10px; display: flex;">
-    <input id="chat-input" type="text" placeholder="Tell me how you feel..." style="flex: 1; padding: 5px;">
-    <button onclick="sendMessage()" style="margin-left: 5px;">▶️</button>
+<div id="chat-container">
+  <div id="chat-header">MoovyBot: Emotion Picks</div>
+  <div id="chat-log"></div>
+  <div id="chat-input-area">
+    <input id="chat-input" type="text" placeholder="Tell me how you feel...">
+    <button id="send-btn" onclick="sendMessage()">▶️</button>
   </div>
 </div>
+
 
 
     

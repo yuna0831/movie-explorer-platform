@@ -323,7 +323,8 @@ app.get("/comment", (req, res) => {
 
 // 영화별 댓글 저장
 app.post("/api/comments", (req, res) => {
-  const { movie_id, username, comment, rating, parent_id } = req.body;
+  const { movie_id, username, comment, rating, parent_id, emotion } = req.body;
+
 
   if (!movie_id || !username || (!comment && !rating)) {
     return res.status(400).json({ message: "Missing required fields" });
@@ -331,12 +332,13 @@ app.post("/api/comments", (req, res) => {
 
   // parent_id가 있으면 대댓글로 저장
   const query = parent_id
-    ? "INSERT INTO comments (movie_id, username, comment, rating, parent_id, created_at) VALUES (?, ?, ?, ?, ?, NOW())"
-    : "INSERT INTO comments (movie_id, username, comment, rating, created_at) VALUES (?, ?, ?, ?, NOW())";
+    ? "INSERT INTO comments (movie_id, username, comment, rating, emotion, parent_id, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())"
+    : "INSERT INTO comments (movie_id, username, comment, rating, emotion, created_at) VALUES (?, ?, ?, ?, ?, NOW())";
 
   const params = parent_id
-    ? [movie_id, username, comment || null, rating || null, parent_id]
-    : [movie_id, username, comment || null, rating || null];
+    ? [movie_id, username, comment || null, rating || null, emotion || null, parent_id]
+    : [movie_id, username, comment || null, rating || null, emotion || null];
+
 
   db.query(query, params, (err, result) => {
     if (err) return res.status(500).json({ message: "Database error" });
@@ -621,6 +623,112 @@ app.post("/api/emotion-recommend", async (req, res) => {
     return res.status(500).json({ error: "Failed to get GPT response" });
   }
 });
+
+// 1️⃣ 감정별 추천 키워드/장르 정의
+const cubeMappings = {
+  "lonely-night": {
+    genres: "10749,18",  // Romance + Comedy
+    message: "You’re not alone tonight. This film understands."
+  },
+  "stress-monday": {
+    genres: "28,35",  // Comedy + Adventure
+    message: "Lighten your heavy start of the week."
+  },
+  "happy-friends": {
+    keywords: "4344",
+    message: "Nothing heals like laughter together."
+  },
+  "sleepless-study": {
+    genres: "99",// Animation + Comedy + Family
+    message: "Ease your racing mind with a calming story."
+  },
+  "rainy-alone": {
+    keywords: "6054",
+    message: "Let the quiet scenes soothe your soul."
+  },
+  "overwhelmed-week": {
+    keywords: "14544",
+    message: "Let this film gently slow you down."
+  },
+  "motivation-monday": {
+    keywords: "9715",
+    message: "Fuel your fire to start again."
+  },
+  "night-anxiety": {
+    genres: "16,10751",  // Animation + Comedy + Family
+    message: "Something to hold your hand until sleep."
+  },
+  "post-social-fatigue": {
+    genres: "16,18",
+    message: "A quiet companion to recharge with."
+  },
+  "nostalgic-feels": {
+    keywords: "207317",
+    message: "A trip back in time, just for you."
+  },
+  "cozy-sunday": {
+    genres: "10402",
+    message: "Blanket, tea, and a warm story."
+  },
+  "hopeless-romantic": {
+    genres: "10749",
+    message: "Fall in love — even if it hurts."
+  },
+  "solo-meal": { 
+    genres: "16,10751", 
+    keywords: "179431",   
+    message: "Dine with this story, not just food."
+  },
+  "bad-day": {
+    genres: "28,53",
+    message: "This film gets how you feel."
+  },
+  "friday-reset": {
+    genres: "18,35",
+    message: "Something fresh to recharge your vibe."
+  }
+};
+
+app.get("/api/cube", async (req, res) => {
+  const { cube } = req.query;
+  const map = cubeMappings[cube];
+
+  if (!map) return res.status(400).json({ message: "Invalid cube type" });
+
+  const baseParams = {
+    api_key: process.env.TMDB_API_KEY,
+    sort_by: "popularity.desc",
+    "vote_average.gte": 6.5,
+    "vote_count.gte": 1000,
+    language: "en-US",
+    region: "US",
+    "primary_release_date.gte": "2000-01-01",
+    ...(map.keywords ? { with_keywords: map.keywords } : {}),
+    ...(map.genres ? { with_genres: map.genres } : {})
+  };
+
+  try {
+
+    let results = [];       // ✅ 여기 추가!
+    let page = 1;
+    // 최대 3페이지까지 시도
+    while (results.length < 20 && page <= 10) {
+      const params = { ...baseParams, page };
+      const tmdbRes = await axios.get("https://api.themoviedb.org/3/discover/movie", { params });
+      const newResults = tmdbRes.data.results || [];
+      results = results.concat(newResults);
+      page++;
+    }
+
+    // 중복 제거 + 최대 20개 제한
+    const uniqueResults = Array.from(new Map(results.map(movie => [movie.id, movie])).values()).slice(0, 20);
+    res.json({ message: map.message, results: uniqueResults }); // ✅ 여기서도 results -> uniqueResults
+  } catch (err) {
+    console.error("CUBE API ERROR:", err.message);
+    res.status(500).json({ message: "Failed to fetch cube movies" });
+  }
+});
+
 
 
 // Start server

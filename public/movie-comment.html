@@ -241,6 +241,50 @@
   box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
 }
 
+.emotion-buttons {
+  margin-top: 15px;
+  text-align: center;
+}
+
+.emotion-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.emotion-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  border: 1px solid #555;
+  background-color: #1e1e1e;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.emotion-btn:hover {
+  background-color: #f97316;
+  border-color: #f97316;
+}
+
+.emotion-btn.selected {
+  background-color: #f97316;
+  border-color: #f97316;
+}
+
+.emotion-tag {
+  display: inline-block;
+  background-color: #333;
+  color: #fff;
+  padding: 4px 8px;
+  margin: 2px 4px 2px 0;
+  border-radius: 16px;
+  font-size: 13px;
+}
+
 
     
 
@@ -279,9 +323,12 @@
 
   <div id="movieInfo"></div>
 
+
   <div id="commentSection" style="display: none;">
     <div class="comment-form-group">
       <textarea id="commentInput" rows="4" placeholder="Write your thoughts here..."></textarea>
+      
+      
       <select id="ratingSelect">
         <option value="">Rate the movie</option>
         <option value="5">&#9733;&#9733;&#9733;&#9733;&#9733; (5)</option>
@@ -290,14 +337,38 @@
         <option value="2">&#9733;&#9733; (2)</option>
         <option value="1">&#9733; (1)</option>
       </select>
+      <div class="emotion-buttons">
+        <span>How did this movie make you feel?</span>
+        <div class="emotion-options">
+          <button class="emotion-btn" data-emotion="Comforted">
+            <i class="fa-solid fa-heart"></i> Comforted
+          </button>
+          <button class="emotion-btn" data-emotion="Shocked">
+            <i class="fa-solid fa-bolt"></i> Shocked
+          </button>
+          <button class="emotion-btn" data-emotion="Peaceful">
+            <i class="fa-solid fa-leaf"></i> Peaceful
+          </button>
+          <button class="emotion-btn" data-emotion="Amused">
+            <i class="fa-solid fa-face-laugh"></i> Amused
+          </button>
+          <button class="emotion-btn" data-emotion="Fluttered">
+            <i class="fa-solid fa-heart-circle-bolt"></i> Fluttered
+          </button>
+          <button class="emotion-btn" data-emotion="Tense">
+            <i class="fa-solid fa-triangle-exclamation"></i> Tense
+          </button>
+        </div>
+      </div>
+      
+      <input type="hidden" id="selectedEmotions" />
+      
       <button class="submit-btn" onclick="submitComment()">
         <i class="fas fa-paper-plane"></i> Submit Review
       </button>
     </div>
   </div>
-
   <div id="commentsContainer"></div>
-
   <script src="comment.js"></script>
   <script>
     // Load movie info on page load using URL parameter
@@ -313,11 +384,32 @@
             <h3>${movie.title} (${movie.release_date?.split("-")[0] || "N/A"})</h3>
             <img src="https://image.tmdb.org/t/p/w200${movie.poster_path}" />
           `;
-          document.getElementById("commentSection").style.display = "block";
+          document.getElementById("commentSection").style.display = "block"; 
           fetchComments(movieId);
         });
     });
   </script>
+  <script>
+    // 감정 버튼 선택 처리
+    document.addEventListener("DOMContentLoaded", () => {
+    const emotionButtons = document.querySelectorAll(".emotion-btn");
+    const emotionInput = document.getElementById("selectedEmotions");  // ID 변경 주의
+
+    emotionButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        // 선택 토글
+        btn.classList.toggle("selected");
+
+        // 선택된 감정들을 모두 수집해서 hidden input에 저장
+        const selectedEmotions = Array.from(document.querySelectorAll(".emotion-btn.selected"))
+          .map(b => b.dataset.emotion);
+
+        emotionInput.value = selectedEmotions.join(",");
+      });
+    });
+  });
+  </script>
+  
   <script>
     async function searchAndRedirect() {
       const title = document.getElementById("movieTitle").value.trim();
@@ -338,6 +430,7 @@
       localStorage.setItem("currentMovieId", movieId);
       window.location.href = `/movie-comment.html?movieId=${movieId}`;
     }
+
   </script>
 </body>
 </html>
