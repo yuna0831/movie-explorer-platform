@@ -246,7 +246,7 @@ async function submitComment() {
   const token = localStorage.getItem("token");
   const comment = document.getElementById("commentInput").value.trim();
   const rating = parseInt(document.getElementById("ratingSelect").value);
-  const emotion = document.getElementById("selectedEmotion").value; // 감정 값 추가
+  const emotion = document.getElementById("selectedEmotions").value; // 감정 값 추가
 
   if (!username || !token) return alert("Please log in first.");
   if (!comment && !rating) return alert("Please write a comment or give a rating.");
@@ -256,14 +256,14 @@ async function submitComment() {
       headers: {
           "Content-Type": "application/json"
       },
-      body: JSON.stringify({ movie_id: movieId, username, comment, rating, emotion: emotions }) // 감정 포함
+      body: JSON.stringify({ movie_id: movieId, username, comment, rating, emotion }) // 감정 포함
   });
 
   const data = await res.json();
   if (res.ok) {
       document.getElementById("commentInput").value = "";
       document.getElementById("ratingSelect").value = "";
-      document.getElementById("selectedEmotion").value = ""; // 감정 초기화
+      document.getElementById("selectedEmotions").value = ""; // 감정 초기화
       document.querySelectorAll(".emotion-btn").forEach(btn => btn.classList.remove("selected")); // 버튼 상태 초기화
       fetchComments(movieId);
   } else {

@@ -195,10 +195,17 @@ async function loadReviews() {
   ? `<div class="rating">${'<i class="fa-solid fa-star"></i>'.repeat(item.rating)}</div>`
   : "";
 
+      const emotions = item.emotion
+      ? `<div class="emotion-tags" style="margin: 6px 0;">
+      ${item.emotion.split(',').map(e => `<span class="emotion-tag">${e.trim()}</span>`).join(' ')}
+     </div>`
+  : "";
+
 
       card.innerHTML = `
         <h4>${item.username}</h4>
         ${stars ? `<div class="rating">${stars}</div>` : ""}
+        ${emotions}
         <p>${item.comment || ""}</p>
         <small style="color: #777; font-size: 12px;">${new Date(item.created_at).toLocaleDateString()}</small>
       `;
