@@ -85,8 +85,8 @@ async function fetchMovies() {
     const card = document.createElement("div");
     card.className = "movie-card";
     card.innerHTML = `
-      <a href="/movie.html?id=${movie.id}">
-        <img src="https://image.tmdb.org/t/p/w300${movie.poster_path}" alt="${movie.title}" />
+    <a href="/movie.html?id=${movie.id}" style="text-decoration: none; color: inherit;">
+      <img src="${movie.poster_path ? `https://image.tmdb.org/t/p/w300${movie.poster_path}` : '/images/no-poster.png'}" alt="${movie.title}" />
         <h3 style="color: white; font-size: 14px; margin: 8px 0 4px;">${movie.title}</h3>
         <p style="color: #ccc; font-size: 12px;">${movie.release_date?.split('-')[0] || 'N/A'}</p>
       </a>
