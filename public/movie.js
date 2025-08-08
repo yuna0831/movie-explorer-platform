@@ -187,27 +187,35 @@ async function loadReviews() {
       return;
     }
 
-    data.forEach(item => {
+    data.forEach(comment => {
       const card = document.createElement("div");
       card.classList.add("review-card");
 
-      const stars = item.rating
-  ? `<div class="rating">${'<i class="fa-solid fa-star"></i>'.repeat(item.rating)}</div>`
-  : "";
+      const stars = comment.rating
+        ? `<div class="rating">${'<i class="fa-solid fa-star"></i>'.repeat(comment.rating)}</div>`
+        : "";
 
-      const emotions = item.emotion
-      ? `<div class="emotion-tags" style="margin: 6px 0;">
-      ${item.emotion.split(',').map(e => `<span class="emotion-tag">${e.trim()}</span>`).join(' ')}
-     </div>`
-  : "";
+      const emotions = comment.emotion
+        ? `<div class="emotion-tags" style="margin: 6px 0;">
+            ${comment.emotion.split(',').map(e => `<span class="emotion-tag">${e.trim()}</span>`).join(' ')}
+          </div>`
+        : "";
 
+      const likes = `
+        <div class="comment-likes">
+          <i class="fa-solid fa-heart like-icon ${comment.user_liked ? 'liked' : ''}" 
+             onclick="toggleLike(this, ${comment.id})"></i>
+          <span class="like-count">${comment.like_count || 0}</span> likes
+        </div>
+      `;
 
       card.innerHTML = `
-        <h4>${item.username}</h4>
-        ${stars ? `<div class="rating">${stars}</div>` : ""}
+        <h4>${comment.username}</h4>
+        ${stars}
         ${emotions}
-        <p>${item.comment || ""}</p>
-        <small style="color: #777; font-size: 12px;">${new Date(item.created_at).toLocaleDateString()}</small>
+        <p>${comment.comment || ""}</p>
+        ${likes}
+        <small style="color: #777; font-size: 12px;">${new Date(comment.created_at).toLocaleDateString()}</small>
       `;
 
       reviewList.appendChild(card);
@@ -216,6 +224,7 @@ async function loadReviews() {
     console.error("Error loading reviews:", error);
   }
 }
+
 
 
   

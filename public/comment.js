@@ -62,6 +62,13 @@ async function fetchComments(movieId) {
   </div>` : ""
 }
   ${comment.comment ? `<p class="comment-text">${comment.comment}</p>` : ""}
+
+  <div class="comment-likes">
+  <i class="fa-solid fa-heart like-icon ${comment.user_liked ? 'liked' : ''}" onclick="toggleLike(this, ${comment.id})"></i>
+  <span class="like-count">${comment.like_count || 0}</span> likes
+</div>
+
+
   <div class="reply-input" id="reply-input-${comment.id}" style="display:none; margin-top:10px;">
     <textarea id="reply-text-${comment.id}" rows="2" style="width:100%;"></textarea><br>
     <button onclick="submitReply(${comment.id})">
@@ -75,6 +82,43 @@ async function fetchComments(movieId) {
       await fetchReplies(comment.id, div);
     }
   }    
+  
+  // comment - likes
+  async function toggleLike(icon, commentId) {
+    const username = localStorage.getItem("username");
+    if (!username) return alert("Login required to like");
+  
+    if (icon.classList.contains("liked")) {
+      alert("You already liked this comment.");
+      return;
+    }
+  
+    try {
+      const res = await fetch(`/api/comments/${commentId}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username })
+      });
+  
+      const data = await res.json();
+  
+      if (res.status === 409) {
+        alert("You already liked this comment.");
+        return;
+      }
+  
+      if (res.ok) {
+        icon.classList.add("liked");
+        const countSpan = icon.nextElementSibling;
+        countSpan.textContent = parseInt(countSpan.textContent) + 1;
+      } else {
+        alert(data.message || "Failed to like comment");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error: " + err.message);
+    }
+  }
   
   async function fetchReplies(commentId, container) {
     const res = await fetch(`/api/replies/${commentId}`);

@@ -243,7 +243,7 @@ const db = mysql.createConnection({
   user: "root",
   password: "Love1019^^",   
   database: "movie_app"
-});
+}).promise();
 
 db.connect(err => {
   if (err) {
@@ -317,20 +317,18 @@ app.post("/api/login", (req, res) => {
 });
 
 app.get("/comment", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "comment.html"));
+    res.sendFile(path.join(__dirname, "public", "home-comment.html"));
   });
   
 
 // 영화별 댓글 저장
-app.post("/api/comments", (req, res) => {
+app.post("/api/comments", async (req, res) => {
   const { movie_id, username, comment, rating, parent_id, emotion } = req.body;
-
 
   if (!movie_id || !username || (!comment && !rating)) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
-  // parent_id가 있으면 대댓글로 저장
   const query = parent_id
     ? "INSERT INTO comments (movie_id, username, comment, rating, emotion, parent_id, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())"
     : "INSERT INTO comments (movie_id, username, comment, rating, emotion, created_at) VALUES (?, ?, ?, ?, ?, NOW())";
@@ -339,45 +337,57 @@ app.post("/api/comments", (req, res) => {
     ? [movie_id, username, comment || null, rating || null, emotion || null, parent_id]
     : [movie_id, username, comment || null, rating || null, emotion || null];
 
-
-  db.query(query, params, (err, result) => {
-    if (err) return res.status(500).json({ message: "Database error" });
+  try {
+    await db.query(query, params);
     res.json({ message: "Review submitted!" });
-  });
+  } catch (err) {
+    console.error("Insert comment error:", err);
+    res.status(500).json({ message: "Database error" });
+  }
 });
-
 
 
 
 // 특정 영화의 댓글 불러오기
-app.get("/api/comments/:movie_id", (req, res) => {
-    const movie_id = req.params.movie_id;
-    db.query(
-        "SELECT * FROM comments WHERE movie_id = ? ORDER BY created_at DESC",
-        [movie_id],
-        (err, results) => {
-            if (err) return res.status(500).json({ message: "Database error" });
-            res.json(results);
-        }
+app.get("/api/comments/:movie_id", async (req, res) => {
+  const movieId = req.params.movie_id;
+  try {
+    const [rows] = await db.query(
+      `SELECT *, 
+              (SELECT COUNT(*) FROM comment_likes WHERE comment_id = comments.id) AS like_count 
+       FROM comments 
+       WHERE movie_id = ?
+       ORDER BY like_count DESC, created_at ASC`, 
+      [movieId]
     );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error loading comments:", err);
+    res.status(500).json({ error: "Database error" });
+  }
 });
 
+
 // DELETE comment by ID
-app.delete("/api/comments/:id", (req, res) => {
+app.delete("/api/comments/:id", async (req, res) => {
   const commentId = req.params.id;
 
-  db.query("DELETE FROM comments WHERE id = ?", [commentId], (err, result) => {
-    if (err) return res.status(500).json({ message: "Database error" });
+  try {
+    const [result] = await db.query("DELETE FROM comments WHERE id = ?", [commentId]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Comment not found" });
     }
 
     res.json({ message: "Comment deleted successfully" });
-  });
+  } catch (err) {
+    console.error("Delete comment error:", err);
+    res.status(500).json({ message: "Database error" });
+  }
 });
 
-app.put("/api/comments/:id", (req, res) => {
+app.put("/api/comments/:id", async (req, res) => {
   const commentId = req.params.id;
   const { username, comment } = req.body;
 
@@ -385,9 +395,8 @@ app.put("/api/comments/:id", (req, res) => {
     return res.status(400).json({ message: "Missing username or comment" });
   }
 
-  // 1. 작성자 확인
-  db.query("SELECT username FROM comments WHERE id = ?", [commentId], (err, results) => {
-    if (err) return res.status(500).json({ message: "DB error" });
+  try {
+    const [results] = await db.query("SELECT username FROM comments WHERE id = ?", [commentId]);
     if (results.length === 0) return res.status(404).json({ message: "Comment not found" });
 
     const owner = results[0].username;
@@ -395,47 +404,50 @@ app.put("/api/comments/:id", (req, res) => {
       return res.status(403).json({ message: "Unauthorized to edit this comment" });
     }
 
-    // 2. 댓글 수정
-    db.query("UPDATE comments SET comment = ? WHERE id = ?", [comment, commentId], (err2) => {
-      if (err2) return res.status(500).json({ message: "Update failed" });
-      res.json({ message: "Comment updated successfully" });
-    });
-  });
+    await db.query("UPDATE comments SET comment = ? WHERE id = ?", [comment, commentId]);
+    res.json({ message: "Comment updated successfully" });
+  } catch (err) {
+    console.error("Update comment error:", err);
+    res.status(500).json({ message: "Database error" });
+  }
 });
 
 
 // 대댓글 저장
-app.post("/api/replies", (req, res) => {
+app.post("/api/replies", async (req, res) => {
   const { comment_id, username, reply } = req.body;
+
   if (!comment_id || !username || !reply) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
-  db.query(
-    "INSERT INTO replies (comment_id, username, reply) VALUES (?, ?, ?)",
-    [comment_id, username, reply],
-    (err) => {
-      if (err) return res.status(500).json({ message: "Database error" });
-      res.json({ message: "Reply added!" });
-    }
-  );
+  try {
+    await db.query(
+      "INSERT INTO replies (comment_id, username, reply) VALUES (?, ?, ?)",
+      [comment_id, username, reply]
+    );
+    res.json({ message: "Reply added!" });
+  } catch (err) {
+    console.error("Insert reply error:", err);
+    res.status(500).json({ message: "Database error" });
+  }
 });
 
 // 특정 댓글의 대댓글 가져오기
-app.get("/api/replies/:comment_id", (req, res) => {
-  const comment_id = req.params.comment_id;
-  db.query(
-    "SELECT * FROM replies WHERE comment_id = ? ORDER BY created_at ASC",
-    [comment_id],
-    (err, results) => {
-      if (err) return res.status(500).json({ message: "Database error" });
-      res.json(results);
-    }
-  );
+app.get("/api/replies/:comment_id", async (req, res) => {
+  const id = req.params.comment_id;
+  try {
+    const [results] = await db.query("SELECT * FROM replies WHERE comment_id = ?", [id]);
+    res.json(results);
+  } catch (err) {
+    console.error("DB error:", err);
+    res.status(500).json({ message: "Database error" });
+  }
 });
 
+
 // 대댓글 수정
-app.put("/api/replies/:id", (req, res) => {
+app.put("/api/replies/:id", async (req, res) => {
   const replyId = req.params.id;
   const { username, reply } = req.body;
 
@@ -443,9 +455,8 @@ app.put("/api/replies/:id", (req, res) => {
     return res.status(400).json({ message: "Missing username or reply" });
   }
 
-  // 작성자 확인
-  db.query("SELECT username FROM replies WHERE id = ?", [replyId], (err, results) => {
-    if (err) return res.status(500).json({ message: "DB error" });
+  try {
+    const [results] = await db.query("SELECT username FROM replies WHERE id = ?", [replyId]);
     if (results.length === 0) return res.status(404).json({ message: "Reply not found" });
 
     const owner = results[0].username;
@@ -453,32 +464,31 @@ app.put("/api/replies/:id", (req, res) => {
       return res.status(403).json({ message: "Unauthorized to edit this reply" });
     }
 
-    // 수정
-    db.query("UPDATE replies SET reply = ? WHERE id = ?", [reply, replyId], (err2) => {
-      if (err2) return res.status(500).json({ message: "Update failed" });
-      res.json({ message: "Reply updated successfully" });
-    });
-  });
+    await db.query("UPDATE replies SET reply = ? WHERE id = ?", [reply, replyId]);
+    res.json({ message: "Reply updated successfully" });
+  } catch (err) {
+    console.error("Update reply error:", err);
+    res.status(500).json({ message: "Database error" });
+  }
 });
 
 // 대댓글 삭제
-app.delete("/api/replies/:id", (req, res) => {
+app.delete("/api/replies/:id", async (req, res) => {
   const replyId = req.params.id;
 
-  db.query("DELETE FROM replies WHERE id = ?", [replyId], (err, results) => {
-    if (err) {
-      console.error("Delete reply error:", err);
-      return res.status(500).json({ message: "Database error" });
-    }
+  try {
+    const [results] = await db.query("DELETE FROM replies WHERE id = ?", [replyId]);
 
     if (results.affectedRows === 0) {
       return res.status(404).json({ message: "Reply not found" });
     }
 
     res.json({ message: "Reply deleted successfully" });
-  });
+  } catch (err) {
+    console.error("Delete reply error:", err);
+    res.status(500).json({ message: "Database error" });
+  }
 });
-
 
 // save 연결
 app.get("/watchlist", (req, res) => {
@@ -486,22 +496,21 @@ app.get("/watchlist", (req, res) => {
   });
   
 
-app.get("/api/watchlist/:username", (req, res) => {
+  app.get("/api/watchlist/:username", async (req, res) => {
     const username = req.params.username;
-
-    db.query(
+  
+    try {
+      const [results] = await db.query(
         "SELECT * FROM watchlist WHERE username = ?",
-        [username],
-        (err, results) => {
-            if (err) {
-                console.error("DB Error:", err);
-                return res.status(500).json({ message: "Database error" });
-            }
+        [username]
+      );
+      res.json(results);
+    } catch (err) {
+      console.error("DB Error:", err);
+      res.status(500).json({ message: "Database error" });
+    }
+  });
 
-            res.json(results);
-        }
-    );
-});
 
 // movie page 라우팅 추가
 app.get("/movie", (req, res) => {
@@ -510,57 +519,53 @@ app.get("/movie", (req, res) => {
   
   
 // watchlist 데이터베이스
-app.post("/api/watchlist", (req, res) => {
+app.post("/api/watchlist", async (req, res) => {
   const { username, movie_id, title, poster_path, genre_ids } = req.body;
 
   if (!username || !movie_id || !title || !genre_ids) {
     return res.status(400).json({ message: "Missing fields." });
   }
 
-  // ⭐ 중복 확인
-  const checkSql = "SELECT * FROM watchlist WHERE username = ? AND movie_id = ?";
-  db.query(checkSql, [username, movie_id], (err, results) => {
-    if (err) {
-      console.error("DB Error (check):", err);
-      return res.status(500).json({ message: "Database error." });
-    }
+  try {
+    const [existing] = await db.query(
+      "SELECT * FROM watchlist WHERE username = ? AND movie_id = ?",
+      [username, movie_id]
+    );
 
-    if (results.length > 0) {
+    if (existing.length > 0) {
       return res.status(409).json({ message: "⚠️ Already in watchlist." });
     }
 
-    // ✅ 없으면 insert
-    const insertSql = "INSERT INTO watchlist (username, movie_id, title, poster_path, genre_ids) VALUES (?, ?, ?, ?, ?)";
-    db.query(insertSql, [username, movie_id, title, poster_path, JSON.stringify(genre_ids)], (err, result) => {
-      if (err) {
-        console.error("DB Error (insert):", err);
-        return res.status(500).json({ message: "Database error." });
-      }
+    await db.query(
+      "INSERT INTO watchlist (username, movie_id, title, poster_path, genre_ids) VALUES (?, ?, ?, ?, ?)",
+      [username, movie_id, title, poster_path, JSON.stringify(genre_ids)]
+    );
 
-      res.json({ message: "✅ Movie saved to watchlist!" });
-    });
-  });
+    res.json({ message: "✅ Movie saved to watchlist!" });
+  } catch (err) {
+    console.error("DB Error:", err);
+    res.status(500).json({ message: "Database error." });
+  }
 });
 
 
 // watchlist 
-app.delete("/api/watchlist/:id", (req, res) => {
-    const id = req.params.id;
+app.delete("/api/watchlist/:id", async (req, res) => {
+  const id = req.params.id;
 
-    db.query("DELETE FROM watchlist WHERE id = ?", [id], (err, result) => {
-        if (err) {
-            console.error("Failed to delete:", err);
-            return res.status(500).json({ message: "Database error" });
-        }
+  try {
+    const [result] = await db.query("DELETE FROM watchlist WHERE id = ?", [id]);
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: "Movie not found in watchlist" });
-        }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Movie not found in watchlist" });
+    }
 
-        res.status(200).json({ message: "Deleted successfully" });
-    });
+    res.status(200).json({ message: "Deleted successfully" });
+  } catch (err) {
+    console.error("Failed to delete:", err);
+    res.status(500).json({ message: "Database error" });
+  }
 });
-
 
 
 app.post("/api/emotion-recommend", async (req, res) => {
@@ -729,6 +734,40 @@ app.get("/api/cube", async (req, res) => {
   }
 });
 
+// count likes - comment page
+app.post("/api/comments/:id/like", async (req, res) => {
+  const commentId = parseInt(req.params.id);
+  const { username } = req.body;
+
+  if (!username || isNaN(commentId)) {
+    return res.status(400).json({ message: "Invalid data." });
+  }
+
+  try {
+    const [existing] = await db.query(
+      "SELECT * FROM comment_likes WHERE comment_id = ? AND username = ?",
+      [commentId, username]
+    );
+
+    if (existing.length > 0) {
+      return res.status(409).json({ message: "Already liked" });
+    }
+
+    await db.query(
+      "INSERT INTO comment_likes (comment_id, username) VALUES (?, ?)",
+      [commentId, username]
+    );
+    await db.query(
+      "UPDATE comments SET like_count = like_count + 1 WHERE id = ?",
+      [commentId]
+    );
+
+    res.json({ message: "Liked" });
+  } catch (err) {
+    console.error("Like comment error:", err);
+    res.status(500).json({ message: "Failed to like comment." });
+  }
+});
 
 
 // Start server
