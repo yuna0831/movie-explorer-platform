@@ -5,6 +5,10 @@ const mysql = require("mysql2");
 const bcrypt = require("bcryptjs");
 const cors = require("cors");
 const path = require("path");
+const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 
 const app = express();
 const PORT = 3000;
@@ -268,52 +272,91 @@ app.get("/user", (req, res) => {
 
 // Sign-up API
 app.post("/api/sign", async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ message: "Please enter both username and password." });
-  }
+  try {
+    const { firstName, lastName, email, password } = req.body;
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  db.query(
-    "INSERT INTO users (username, password) VALUES (?, ?)",
-    [username, hashedPassword],
-    (err, result) => {
-      if (err) {
-        if (err.code === "ER_DUP_ENTRY") {
-          return res.status(409).json({ message: "Username already exists." });
-        }
-        return res.status(500).json({ message: "Database error." });
-      }
-
-      res.status(200).json({ message: "Sign up successful!", token: "dummy_token" });
+    if (!email || !password || !firstName || !lastName) {
+      return res.status(400).json({ message: "Missing firstName/lastName/email/password" });
     }
-  );
+    if (password.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters." });
+    }
+
+    // ✅ email 중복 체크 (id 컬럼 쓰지 말고 SELECT 1)
+    const [dupEmail] = await db.query(
+      "SELECT 1 FROM users WHERE email = ? LIMIT 1",
+      [email]
+    );
+    if (dupEmail.length) {
+      return res.status(409).json({ message: "Email already exists." });
+    }
+
+    // ✅ username 생성 + 중복 회피
+    const base = (email.split("@")[0] || "user").slice(0, 30);
+    let username = base, n = 1;
+    // username도 유니크라면 중복 회피
+    while (true) {
+      const [dupUser] = await db.query(
+        "SELECT 1 FROM users WHERE username = ? LIMIT 1",
+        [username]
+      );
+      if (dupUser.length === 0) break;
+      username = `${base}${n++}`;
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+
+    // ✅ 스키마에 맞게 INSERT (username, password, first_name, last_name, email, google_sub)
+    await db.query(
+      "INSERT INTO users (username, password, first_name, last_name, email, google_sub) VALUES (?, ?, ?, ?, ?, NULL)",
+      [username, hashed, firstName, lastName, email]
+    );
+
+    // 회원가입 뒤 로그인 페이지로 보낼 거면 토큰 안 줘도 됨
+    return res.status(200).json({ ok: true, message: "Sign up successful!" });
+  } catch (err) {
+    console.error("SIGN ERROR:", {
+      code: err.code, errno: err.errno, sqlState: err.sqlState,
+      sqlMessage: err.sqlMessage, message: err.message
+    });
+    if (err.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({ message: "Duplicate entry (email/username)" });
+    }
+    if (err.code === "ER_BAD_FIELD_ERROR") {
+      return res.status(500).json({ message: "DB schema mismatch: check column names" });
+    }
+    return res.status(500).json({ message: "Database error" });
+  }
 });
 
-const jwt = require("jsonwebtoken");
+
+
 const SECRET_KEY = "supersecretkey";
+app.post("/api/user", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password)
+      return res.status(400).json({ message: "Missing email or password" });
 
-app.post("/api/login", (req, res) => {
-    const { username, password } = req.body;
+    const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
+    if (!rows.length) return res.status(401).json({ message: "Invalid email or password" });
 
-    db.query("SELECT * FROM users WHERE username = ?", [username], async (err, results) => {
-        if (err) return res.status(500).json({ message: "Database error" });
+    const user = rows[0];
+    if (!user.password) return res.status(400).json({ message: "Use Google sign-in for this account" });
 
-        if (results.length === 0) {
-            return res.status(401).json({ message: "Invalid username or password" });
-        }
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) return res.status(401).json({ message: "Invalid email or password" });
 
-        const user = results[0];
-        const isMatch = await bcrypt.compare(password, user.password);
-
-        if (!isMatch) {
-            return res.status(401).json({ message: "Invalid username or password" });
-        }
-
-        const token = jwt.sign({ username: user.username }, "supersecretkey", { expiresIn: "1h" });
-        res.json({ token, username: user.username });
-    });
+    const token = jwt.sign(
+      { username: user.username, email: user.email },
+      process.env.APP_JWT_SECRET || "dev-only-secret",
+      { expiresIn: "7d" }
+    );
+    return res.json({ token, username: user.username });
+  } catch (err) {
+    console.error("LOGIN ERROR:", err);
+    return res.status(500).json({ message: "Database error" });
+  }
 });
 
 app.get("/comment", (req, res) => {
@@ -766,6 +809,113 @@ app.post("/api/comments/:id/like", async (req, res) => {
   } catch (err) {
     console.error("Like comment error:", err);
     res.status(500).json({ message: "Failed to like comment." });
+  }
+});
+
+// google account - sign in
+// google account - sign in
+app.post("/api/google-login", async (req, res) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) return res.status(400).json({ message: "Missing credential" });
+
+    // 1) 구글 ID 토큰 검증
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const p = ticket.getPayload(); // { sub, email, email_verified, given_name, family_name, ... }
+
+    const sub = p.sub;
+    const email = p.email || null;
+    const firstName = p.given_name || null;
+    const lastName  = p.family_name || null;
+
+    let username;
+
+    // 2) google_sub로 기존 사용자 있는지
+    const [bySub] = await db.query(
+      "SELECT id, username, email FROM users WHERE google_sub = ? LIMIT 1",
+      [sub]
+    );
+
+    if (bySub.length) {
+      username = bySub[0].username;
+
+      // 이메일/이름이 비어있으면 보충 업데이트(선택)
+      await db.query(
+        "UPDATE users SET email = COALESCE(?, email), first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name) WHERE id = ?",
+        [email, firstName, lastName, bySub[0].id]
+      );
+
+    } else if (email) {
+      // 3) 같은 이메일의 기존 로컬 계정 있는지
+      const [byEmail] = await db.query(
+        "SELECT id, username FROM users WHERE email = ? LIMIT 1",
+        [email]
+      );
+
+      if (byEmail.length) {
+        username = byEmail[0].username;
+        // 해당 로컬 계정에 구글 서브를 연결
+        await db.query(
+          "UPDATE users SET google_sub = ?, first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name) WHERE id = ?",
+          [sub, firstName, lastName, byEmail[0].id]
+        );
+      } else {
+        // 4) 완전 신규 — username 유니크 생성
+        const base = (email.split("@")[0] || `user_${sub}`).slice(0, 30);
+        let candidate = base, n = 1;
+        while (true) {
+          const [dup] = await db.query("SELECT 1 FROM users WHERE username = ? LIMIT 1", [candidate]);
+          if (!dup.length) break;
+          candidate = `${base}${n++}`;
+        }
+        username = candidate;
+
+        await db.query(
+          "INSERT INTO users (username, password, first_name, last_name, email, google_sub) VALUES (?, NULL, ?, ?, ?, ?)",
+          [username, firstName, lastName, email, sub]
+        );
+      }
+
+    } else {
+      // 이메일도 없고 google_sub만 있는 희귀 케이스(이메일 비공개 등)
+      const base = `user_${sub}`.slice(0,30);
+      let candidate = base, n = 1;
+      while (true) {
+        const [dup] = await db.query("SELECT 1 FROM users WHERE username = ? LIMIT 1", [candidate]);
+        if (!dup.length) break;
+        candidate = `${base}${n++}`;
+      }
+      username = candidate;
+
+      await db.query(
+        "INSERT INTO users (username, password, first_name, last_name, email, google_sub) VALUES (?, NULL, ?, ?, NULL, ?)",
+        [username, firstName, lastName, sub]
+      );
+    }
+
+    // 5) 우리 앱용 세션 토큰
+    const token = jwt.sign(
+      { username, email },
+      process.env.APP_JWT_SECRET || "dev-only-secret",
+      { expiresIn: "7d" }
+    );
+
+    return res.json({
+      token,
+      user: { username, email, first_name: firstName, last_name: lastName }
+    });
+
+  } catch (err) {
+    console.error("Google login error:", err);
+
+    // DB 에러는 500, 토큰 검증 실패는 401로 구분
+    if (err && err.code) {
+      return res.status(500).json({ message: "Database error", code: err.code, detail: err.sqlMessage });
+    }
+    return res.status(401).json({ message: "Invalid Google ID token" });
   }
 });
 

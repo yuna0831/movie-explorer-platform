@@ -11,11 +11,13 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@react-oauth/google": "^0.12.2",
     "axios": "^1.10.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
     "express": "^4.21.2",
+    "google-auth-library": "^10.2.1",
     "mdb-react-ui-kit": "^9.0.0",
     "mysql2": "^3.14.1",
     "openai": "^5.10.2"

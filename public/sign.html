@@ -3,119 +3,138 @@
 <head>
   <meta charset="UTF-8" />
   <title>Sign up | Moovy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #0e0e0e;
-      font-family: 'Poppins', sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      color: #fff;
+    :root{
+      --bg:#0e0e0e; --box:#171717; --box2:#1f1f1f;
+      --acc:#ff4757; --acc-2:#ff6b81; --text:#fff; --muted:#aab;
+      --stroke:#2d2d2d; --ok:#32ff7e; --err:#ff6b81;
+      --ring: 0 0 0 3px rgba(255,107,129,.25);
     }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{
+      margin:0; padding:0; color:var(--text); font-family:'Poppins',sans-serif;
+      background: radial-gradient(1200px 800px at 10% -10%, rgba(255,71,87,.12), transparent 60%),
+                  radial-gradient(1200px 800px at 110% 110%, rgba(255,71,87,.1), transparent 60%), var(--bg);
+      display:grid; place-items:center;
+    }
+    .signup-box{
+      width:min(92vw, 360px);
+      background:linear-gradient(180deg, var(--box), var(--box2));
+      border:1px solid #202020; border-radius:16px; padding:40px 30px;
+      box-shadow:0 10px 30px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.02) inset;
+      backdrop-filter: blur(6px);
+    }
+    .signup-box h2{ margin:0 0 8px; font-size:22px; font-weight:600; color:var(--acc); }
+    .subtitle{ margin:0 0 18px; font-size:12.5px; color:var(--muted); }
 
-    .signup-box {
-      background-color: #1f1f1f;
-      padding: 50px 40px;
-      border-radius: 16px;
-      box-shadow: 0 0 20px rgba(255, 71, 87, 0.15);
-      width: 320px;
-      text-align: center;
+    .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .field{ margin:12px 0; }
+    .input{
+      width:100%; height:44px; border-radius:10px; border:1px solid var(--stroke);
+      background:#222; color:#fff; padding:0 12px; font-size:14px; outline:none;
+      transition:border-color .15s ease, box-shadow .15s ease, background .2s ease;
     }
+    .input::placeholder{ color:#9aa; }
+    .input:focus{ border-color:var(--acc-2); box-shadow:var(--ring); background:#242424; }
 
-    .signup-box h2 {
-      color: #ff4757;
-      margin-bottom: 30px;
-      font-weight: 600;
-      font-size: 22px;
+    .checkbox{
+      display:flex; gap:8px; align-items:flex-start; text-align:left;
+      font-size:12.5px; color:#ccc; margin-top:6px;
     }
+    .checkbox a{ color:var(--acc-2); text-decoration:none; }
+    .checkbox a:hover{ text-decoration:underline; }
 
-    .signup-box input {
-      width: 100%;
-      padding: 12px 14px;
-      margin: 12px 0;
-      border-radius: 8px;
-      border: 1px solid #333;
-      background-color: #2b2b2b;
-      color: #fff;
-      font-size: 14px;
-      transition: border-color 0.2s ease;
+    .btn{
+      width:100%; height:44px; border:0; border-radius:10px; background:var(--acc); color:#fff;
+      cursor:pointer; font-weight:600; font-size:15px; letter-spacing:.2px; margin-top:14px;
+      transition: transform .15s ease, background .2s ease, opacity .2s ease;
     }
+    .btn:hover{ background:var(--acc-2); transform: translateY(-1px); }
+    .btn:active{ transform: translateY(0); }
+    .btn[disabled]{ opacity:.65; cursor:not-allowed; }
 
-    .signup-box input::placeholder {
-      color: #aaa;
-    }
+    #message{ min-height:18px; margin-top:12px; font-size:13.5px; color:#ccc; }
+    .msg-ok{ color:var(--ok)!important; } .msg-err{ color:var(--err)!important; }
+    .hint{ font-size:11.5px; color:#9aa; margin-top:6px; text-align:center; }
 
-    .signup-box input:focus {
-      outline: none;
-      border-color: #ff6b81;
-      background-color: #2e2e2e;
-    }
-
-    .signup-box button {
-      width: 100%;
-      padding: 12px;
-      background-color: #ff4757;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 600;
-      color: #fff;
-      cursor: pointer;
-      margin-top: 18px;
-      transition: background-color 0.3s ease, transform 0.2s ease;
-    }
-
-    .signup-box button:hover {
-      background-color: #ff6b81;
-      transform: translateY(-2px);
-    }
-
-    #message {
-      margin-top: 16px;
-      font-size: 14px;
-      color: #ccc;
-    }
+    .spinner{ display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.25);
+      border-top-color:#fff; border-radius:50%; vertical-align:middle; margin-left:8px; animation:spin .8s linear infinite; }
+    @keyframes spin{ to{ transform:rotate(360deg); } }
   </style>
 </head>
 <body>
   <div class="signup-box">
     <h2>Create Your Moovy Account</h2>
-    <input type="text" id="username" placeholder="Username" />
-    <input type="password" id="password" placeholder="Password" />
-    <button onclick="create()">Sign Up</button>
+    <p class="subtitle">Sign up with your email to get started.</p>
+
+    <form id="signForm" autocomplete="on">
+      <div class="grid-2">
+        <div class="field"><input type="text" id="firstName" class="input" placeholder="First name" autocomplete="given-name" required /></div>
+        <div class="field"><input type="text" id="lastName"  class="input" placeholder="Last name"  autocomplete="family-name" required /></div>
+      </div>
+      <div class="field"><input type="email" id="email" class="input" placeholder="Email" autocomplete="email" required /></div>
+      <div class="field"><input type="password" id="pw2" class="input" placeholder="Password (min 8)" autocomplete="new-password" required /></div>
+
+      <label class="checkbox">
+        <input type="checkbox" id="accept2" />
+        <span>I accept the <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a> and <a href="/terms" target="_blank" rel="noopener">Terms</a>.</span>
+      </label>
+
+      <button type="submit" id="signBtn" class="btn">Sign Up</button>
+    </form>
+
     <p id="message"></p>
+    <p class="hint">Already have an account? <a href="/user" style="color:#cfd">Log in</a></p>
   </div>
 
   <script>
-    async function create() {
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
+    const form = document.getElementById("signForm");
+    const btn  = document.getElementById("signBtn");
+    const msg  = document.getElementById("message");
 
-      const response = await fetch("http://localhost:3000/api/sign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      });
-
-      const data = await response.json();
-
-      const msg = document.getElementById("message");
-      if (response.ok) {
-        localStorage.setItem("token", data.token);
-        msg.style.color = "#32ff7e";
-        msg.innerText = "Sign up successful!";
-        setTimeout(() => {
-          window.location.href = "/user";
-        }, 1000);
-      } else {
-        msg.style.color = "#ff6b81";
-        msg.innerText = data.message;
-      }
+    function setMessage(text, ok=false){
+      msg.textContent = text || "";
+      msg.classList.remove("msg-ok","msg-err");
+      if(text) msg.classList.add(ok ? "msg-ok" : "msg-err");
     }
+
+    form.addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const firstName = document.getElementById("firstName").value.trim();
+      const lastName  = document.getElementById("lastName").value.trim();
+      const email     = document.getElementById("email").value.trim();
+      const password  = document.getElementById("pw2").value.trim();
+      const accept2   = document.getElementById("accept2").checked;
+
+      if (!accept2) { setMessage("Please accept the Privacy Policy and Terms.", false); return; }
+      if (password.length < 8) { setMessage("Password must be at least 8 characters.", false); return; }
+
+      try{
+        btn.disabled = true;
+        const old = btn.textContent;
+        btn.textContent = "Creating account...";
+        const sp = document.createElement("span"); sp.className="spinner"; btn.appendChild(sp);
+
+        const r = await fetch("/api/sign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ firstName, lastName, email, password })
+        });
+        const body = await r.json().catch(()=>({}));
+        if (!r.ok) throw new Error(body.message || `HTTP ${r.status}`);
+
+        setMessage("Sign up successful! Redirecting to login…", true);
+        setTimeout(() => { location.href = "/user.html"; }, 1600);
+      }catch(e){
+        console.error(e);
+        setMessage(e.message, false);
+      }finally{
+        btn.disabled = false;
+        btn.textContent = "Sign Up";
+      }
+    });
   </script>
 </body>
 </html>

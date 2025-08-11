@@ -2,136 +2,223 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Log In | Moovy</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #0e0e0e;
-      font-family: 'Poppins', sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      color: #fff;
+    :root{
+      --bg:#0e0e0e; --box:#171717; --box2:#1f1f1f;
+      --acc:#ff4757; --acc-2:#ff6b81; --text:#fff; --muted:#aab;
+      --stroke:#2d2d2d; --ok:#32ff7e; --err:#ff6b81;
+      --ring: 0 0 0 3px rgba(255,107,129,.25);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; padding:0; color:var(--text); font-family:'Poppins',sans-serif;
+      background: radial-gradient(1200px 800px at 10% -10%, rgba(255,71,87,.12), transparent 60%),
+                  radial-gradient(1200px 800px at 110% 110%, rgba(255,71,87,.1), transparent 60%), var(--bg);
+      display:grid; place-items:center;
+    }
+    /* dreamy edge glow (강하게) */
+    body::before,
+    body::after{
+      content:""; position:fixed; inset:-25%; pointer-events:none; z-index:0;
+      filter: blur(80px) saturate(115%);
+    }
+    body::before{
+      background:
+        radial-gradient(1100px 800px at -10% -10%, rgba(255,107,129,0.45), transparent 60%),
+        radial-gradient(1100px 820px at 110% 110%, rgba(255,71,87,0.38), transparent 62%);
+    }
+    body::after{
+      background:
+        radial-gradient(900px 680px at 110% -10%, rgba(255,107,129,0.28), transparent 60%),
+        radial-gradient(840px 620px at -10% 110%, rgba(255,71,87,0.24), transparent 62%);
+      mix-blend-mode: screen; opacity:.95;
     }
 
-    .login-box {
-      background-color: #1f1f1f;
-      padding: 50px 40px;
-      border-radius: 16px;
-      box-shadow: 0 0 20px rgba(255, 71, 87, 0.15);
-      width: 320px;
-      text-align: center;
+    .login-box{
+      width:min(92vw, 360px);
+      background:linear-gradient(180deg, var(--box), var(--box2));
+      border:1px solid #202020; border-radius:16px; padding:40px 30px;
+      box-shadow:0 10px 30px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.02) inset;
+      backdrop-filter: blur(6px); transition:transform .2s ease;
+      position:relative; z-index:1;
     }
+    .login-box:hover{ transform: translateY(-2px); }
+    h2{ margin:0 0 10px; font-size:22px; font-weight:600; color:var(--acc); }
+    .subtitle{ margin:0 0 18px; font-size:12.5px; color:var(--muted); }
 
-    .login-box h2 {
-      color: #ff4757;
-      margin-bottom: 30px;
-      font-weight: 600;
-      font-size: 22px;
+    .field{ margin:12px 0; }
+    .input{
+      width:100%; height:44px; border-radius:10px; border:1px solid var(--stroke);
+      background:#222; color:#fff; padding:0 12px; font-size:14px; outline:none;
+      transition:border-color .15s ease, box-shadow .15s ease, background .2s ease;
     }
+    .input::placeholder{ color:#9aa; }
+    .input:focus{ border-color:var(--acc-2); box-shadow:var(--ring); background:#242424; }
 
-    .login-box input {
-      width: 100%;
-      padding: 12px 14px;
-      margin: 12px 0;
-      border-radius: 8px;
-      border: 1px solid #333;
-      background-color: #2b2b2b;
-      color: #fff;
-      font-size: 14px;
-      transition: border-color 0.2s ease;
+    .btn{
+      width:100%; height:44px; border:0; border-radius:10px; background:var(--acc); color:#fff;
+      cursor:pointer; font-weight:600; font-size:15px; letter-spacing:.2px;
+      margin-top:14px; transition: transform .15s ease, background .2s ease, opacity .2s ease;
     }
+    .btn:hover{ background:var(--acc-2); transform: translateY(-1px); }
+    .btn:active{ transform: translateY(0); }
+    .btn[disabled]{ opacity:.65; cursor:not-allowed; }
 
-    .login-box input::placeholder {
-      color: #aaa;
+    .center-link{
+      margin:10px 0 8px; text-align:center; font-size:13px; color:#cfd;
     }
+    .center-link a{ color:#fff; text-decoration:none; font-weight:600; }
+    .center-link a:hover{ color:var(--acc-2); text-decoration:underline; }
 
-    .login-box input:focus {
-      outline: none;
-      border-color: #ff6b81;
-      background-color: #2e2e2e;
-    }
+    .or{ margin:12px 0; display:flex; align-items:center; gap:10px; color:#9aa; font-size:12.5px; }
+    .or::before,.or::after{ content:""; height:1px; background:#2a2a2a; flex:1; }
 
-    .login-box button {
-      width: 100%;
-      padding: 12px;
-      background-color: #ff4757;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 600;
-      color: #fff;
-      cursor: pointer;
-      margin-top: 18px;
-      transition: background-color 0.3s ease, transform 0.2s ease;
-    }
+    /* 구글 공식 버튼을 입력칸과 동일 폭으로 */
+    #googleBtnContainer{ width:100%; }
+    #googleBtnContainer > div{ width:100% !important; display:block; }
 
-    .login-box button:hover {
-      background-color: #ff6b81;
-      transform: translateY(-2px);
-    }
+    #message{ min-height:18px; margin-top:14px; font-size:13.5px; color:#ccc; text-align:center; }
+    .msg-ok{ color:var(--ok) !important; } .msg-err{ color:var(--err) !important; }
 
-    .login-box a {
-      color: #aaa;
-      text-decoration: none;
-      font-size: 13px;
-      display: inline-block;
-      margin-top: 16px;
-      transition: color 0.2s ease;
-    }
-
-    .login-box a:hover {
-      color: #ff6b81;
-      text-decoration: underline;
-    }
-
-    #message {
-      margin-top: 18px;
-      font-size: 14px;
-      color: #ccc;
-    }
+    .spinner{ display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.25);
+      border-top-color:#fff; border-radius:50%; vertical-align:middle; margin-left:8px; animation:spin .8s linear infinite; }
+    @keyframes spin{ to{ transform:rotate(360deg); } }
   </style>
 </head>
 <body>
-  <div class="login-box">
+  <main class="login-box">
     <h2>Log in to Moovy</h2>
-    <input type="text" id="username" placeholder="Username" />
-    <input type="password" id="password" placeholder="Password" />
-    <button onclick="login()">Log In</button>
-    <a href="/sign">Don't have an account? Sign up</a>
+    <p class="subtitle">Use your email or sign in with Google.</p>
+
+    <!-- Email login -->
+    <form id="loginForm" autocomplete="on">
+      <div class="field">
+        <input type="email" id="email" class="input" placeholder="Email" autocomplete="email" required />
+      </div>
+      <div class="field">
+        <input type="password" id="password" class="input" placeholder="Password" autocomplete="current-password" required />
+      </div>
+      <button type="submit" id="loginBtn" class="btn">Log In</button>
+    </form>
+
+    <!-- Middle link -->
+    <p class="center-link">Don’t have an account? <a href="/sign">Sign up</a></p>
+
+    <div class="or">or</div>
+
+    <!-- Google (official) -->
+    <div id="googleBtnContainer"></div>
+
     <p id="message"></p>
-  </div>
+  </main>
 
   <script>
-    async function login() {
-      const username = document.getElementById("username").value.trim();
+    const GOOGLE_CLIENT_ID = "253825186627-nebp72hv107u9teqbed0gla7p5u73h97.apps.googleusercontent.com";
+    let gsiReady = false;
+    const msg = document.getElementById("message");
+    const loginBtn = document.getElementById("loginBtn");
+
+    function setMsg(text, ok=false){
+      msg.textContent = text || "";
+      msg.classList.remove("msg-ok","msg-err");
+      if(text) msg.classList.add(ok ? "msg-ok" : "msg-err");
+    }
+
+    // Email login
+    document.getElementById("loginForm").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
+      if(!email || !password){ setMsg("Please enter your email and password.", false); return; }
 
-      const response = await fetch("http://localhost:3000/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      });
+      try{
+        loginBtn.disabled = true;
+        const old = loginBtn.textContent;
+        loginBtn.textContent = "Signing in...";
+        const sp = document.createElement("span"); sp.className="spinner"; loginBtn.appendChild(sp);
 
-      const data = await response.json();
-      const msg = document.getElementById("message");
+        const r = await fetch("/api/login", {
+          method:"POST", headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ email, password })
+        });
+        const body = await r.json().catch(()=>({}));
+        if(!r.ok) throw new Error(body.message || `HTTP ${r.status}`);
 
-      if (response.ok) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("username", username);
-        msg.style.color = "#32ff7e";
-        msg.innerText = "Login successful!";
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 1000);
-      } else {
-        msg.style.color = "#ff6b81";
-        msg.innerText = data.message;
+        localStorage.setItem("token", body.token);
+        if (body.username) localStorage.setItem("username", body.username);
+        setMsg("Login successful! Redirecting…", true);
+        setTimeout(() => { location.href = "/"; }, 1500);   // 홈으로, 너무 급하지 않게
+      }catch(err){
+        console.error(err); setMsg(err.message, false);
+      }finally{
+        loginBtn.disabled = false; loginBtn.textContent = "Log In";
+      }
+    });
+
+    // Google callback
+    async function handleGoogleCredential(resp){
+      try{
+        if(!resp?.credential) throw new Error("Empty credential");
+        const r = await fetch("/api/google-login", {
+          method:"POST", headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ credential: resp.credential })
+        });
+        const body = await r.json().catch(()=>({}));
+        if(!r.ok) throw new Error(body.message || `HTTP ${r.status}`);
+        if(!body.token) throw new Error("No app token");
+
+        localStorage.setItem("token", body.token);
+        if (body.user?.username) localStorage.setItem("username", body.user.username);
+        setMsg("Logged in with Google! Redirecting…", true);
+        setTimeout(()=>location.href="/", 1500); // 홈으로, 살짝 딜레이
+      }catch(e){
+        console.error(e);
+        setMsg("Google login error: " + e.message, false);
       }
     }
+
+    // Google SDK init
+    function initGoogle() {
+    if (gsiReady || !window.google?.accounts?.id) return;
+    gsiReady = true;
+
+    // ✅ 자동 선택 비활성화 (이걸로 "as yuna" 같은 개인화 흐름 방지)
+    google.accounts.id.disableAutoSelect();
+
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredential,
+      ux_mode: "popup",               // ✅ 팝업만 사용
+      use_fedcm_for_prompt: false,    // ✅ FedCM 끄기
+      auto_select: false,             // ✅ 자동 계정 선택 금지
+      context: "signin"               // (선택) 컨텍스트 명시
+    });
+
+    // ✅ 공식 버튼: 항상 "Sign in with Google"
+    google.accounts.id.renderButton(
+      document.getElementById("googleBtnContainer"),
+      { theme: "filled_black", size: "large", type: "standard", text: "signin_with", shape: "rectangular" }
+    );
+
+    // ❌ 아래처럼 prompt()를 호출하는 코드/폴백 버튼은 완전히 제거해야 함!
+    // google.accounts.id.prompt();
+  }
+
+  window.addEventListener("load", () => {
+    if (window.google?.accounts?.id) initGoogle();
+    else {
+      const iv = setInterval(() => {
+        if (window.google?.accounts?.id) { clearInterval(iv); initGoogle(); }
+      }, 50);
+    }
+  });
   </script>
+
+  <!-- Google Identity Services SDK -->
+  <script src="https://accounts.google.com/gsi/client?hl=en" async defer onload="initGoogle()"></script>
 </body>
 </html>
