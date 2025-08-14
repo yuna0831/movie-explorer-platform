@@ -1,63 +1,164 @@
 
+const REGION = "US";                               // 필요시 "US" 등
+const MIN_YEAR_GLOBAL = 2020;                      // 이보다 옛날 작품은 전역 차단
+const MIN_YEAR_TRENDING = new Date().getFullYear() - 2; // 트렌딩은 최근 2년
+const MIN_VOTECOUNT_TRENDING = 100;                // 너무 마이너한 구작 컷
 
-async function fetchPopularMovies() {
-  const res = await fetch("/api/movie/popular");
-  const data = await res.json();
-  return data.results;
+/* --- Utils --- */
+const getYear = (m) => parseInt(m.release_date?.slice(0, 4) || "0", 10);
+
+function todayISO(offsetDays = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
-async function fetchMultiplePages(endpoint, maxPages = 3) {
-  let all = [];
-  for (let page = 1; page <= maxPages; page++) {
-    const res = await fetch(`/api/${endpoint}?page=${page}`);
-    const data = await res.json();
-    all = all.concat(data.results || []);
-  }
-  return all;
+function dedupeById(list) {
+  return Array.from(new Map(list.map(m => [m.id, m])).values());
 }
 
-async function displayPopular() {
-  const popular = await fetchPopularMovies();
-  const list = document.getElementById("popularMovies");
-  if (!list) return;
-
-  list.innerHTML = "";
-  popular.slice(0, 15).forEach(m => {
-    const y = m.release_date?.split("-")[0] || "N/A";
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <a href="/movie.html?id=${m.id}">
-        <img src="https://image.tmdb.org/t/p/w200${m.poster_path}" alt="${m.title}" />
-      </a>
-      <span class="movie-title">${m.title}</span> (${y})
-    `;
-    list.appendChild(li);
-  });
+async function fetchPages(endpoint, pages = 3, params = "") {
+  const hasQ = endpoint.includes("?");
+  const urls = Array.from({ length: pages }, (_, i) =>
+    `/api/${endpoint}${hasQ ? "&" : "?"}page=${i + 1}${params ? `&${params}` : ""}`
+  );
+  const results = await Promise.all(
+    urls.map(u => fetch(u).then(r => r.json()).catch(() => ({ results: [] })))
+  );
+  return results.flatMap(r => r?.results || []);
 }
 
-async function displaySectionMovies(endpoint, elementId) {
+function renderList(elementId, movies) {
   const track = document.getElementById(elementId);
   if (!track) return;
-
   track.innerHTML = "";
-  const movies = await fetchMultiplePages(endpoint, 3);
-
-  // de-dupe
-  const seen = new Set();
-  const unique = movies.filter(m => (seen.has(m.id) ? false : (seen.add(m.id), true)));
-
-  unique.slice(0, 15).forEach(m => {
+  movies.slice(0, 15).forEach(m => {
     const y = m.release_date?.split("-")[0] || "N/A";
+    const img = m.poster_path
+      ? `https://image.tmdb.org/t/p/w200${m.poster_path}`
+      : `/assets/placeholder-2x3.png`;
     const li = document.createElement("li");
     li.innerHTML = `
       <a href="/movie.html?id=${m.id}">
-        <img src="https://image.tmdb.org/t/p/w200${m.poster_path}" alt="${m.title}" />
+        <img src="${img}" alt="${m.title}" />
       </a>
       <span class="movie-title">${m.title}</span> (${y})
     `;
     track.appendChild(li);
   });
 }
+
+/* --- Sections --- */
+
+// 1) Trending/Popular: 최근작만 노출 (oldies 컷)
+async function displayPopular() {
+  const list = document.getElementById("popularMovies");
+  if (!list) return;
+
+  // 인기 API 여러 페이지 병렬 로드 (이미 fetchPages 있음)
+  let movies = await fetchPages("movie/popular", 3, `region=${REGION}`);
+
+  // 전역 최소연도(예: 2020)와 최근 2년 중 더 빡센 기준 적용
+  const minYear = Math.max(MIN_YEAR_GLOBAL, MIN_YEAR_TRENDING);
+
+  movies = movies
+    .filter(m => getYear(m) >= minYear)
+    .filter(m => (m.vote_count || 0) >= MIN_VOTECOUNT_TRENDING);
+
+  movies = dedupeById(movies).sort((a,b) => (b.popularity||0) - (a.popularity||0));
+  renderList("popularMovies", movies);
+}
+
+
+// 2) Now in Theaters
+window.__nowPlayingIds = new Set();
+
+async function displayNowPlaying() {
+  let movies = await fetchPages("movie/now_playing", 3, `region=${REGION}`);
+  movies = dedupeById(movies).filter(m => getYear(m) >= MIN_YEAR_GLOBAL);
+  window.__nowPlayingIds = new Set(movies.map(m => m.id));
+  renderList("nowPlayingMovies", movies);
+}
+
+// 3) Coming Soon (discover 기반) — 오늘 이후 + 상영 중과 중복 제거
+
+// 프록시가 /api/discover → TMDB /discover/movie에 붙어있어야 해요.
+// 아니라면 DISCOVER_ENDPOINT를 'discover/movie'로 바꾸세요.
+// 네 프록시에 맞게 둘 중 하나(또는 둘 다) 시도
+// 1) helpers 추가
+const DISCOVER_ENDPOINT = 'discover'; // 너의 프록시가 /api/discover → TMDB /discover/movie 로 매핑
+
+function buildParams(obj) {
+  const sp = new URLSearchParams();
+  Object.entries(obj).forEach(([k, v]) => v != null && sp.append(k, String(v)));
+  return sp.toString(); // 2|3 → 2%7C3 자동 인코딩
+}
+function validDateStr(s){ return typeof s==='string' && /^\d{4}-\d{2}-\d{2}$/.test(s); }
+
+async function displayComingSoonHome(minNeeded = 15) {
+  const track = document.getElementById("upcomingMovies");
+  if (!track) return;
+
+  const year  = new Date().getFullYear();
+  const today = todayISO(1);
+  const np    = window.__nowPlayingIds || new Set();
+
+  // ✅ 동작하는 페이지와 동일한 계약: category=upcoming 필수!
+  const baseQ = buildParams({
+    category: 'upcoming',
+    region: REGION,              // 예: 'US' 또는 'KR'
+    sort_by: 'release_date.asc', // 서버가 내부에서 정리
+    with_release_type: '3',      // (네 코드에 맞춤) 리미티드
+  });
+
+  // 여러 페이지 긁기
+  let movies = await fetchPages(DISCOVER_ENDPOINT, 5, baseQ).catch(() => []);
+  movies = dedupeById(movies);
+
+  // 올해 + 오늘 이후 + (원하면) NP 제외
+  let filtered = movies
+    .filter(m => validDateStr(m.release_date))
+    .filter(m => m.release_date.slice(0,4) === String(year))
+    .filter(m => m.release_date >= today)
+    .filter(m => !np.has(m.id));
+
+  // 부족하면 살짝 범위 확장(여전히 category=upcoming 유지)
+  if (filtered.length < minNeeded) {
+    const moreQ = buildParams({
+      category: 'upcoming',
+      region: REGION,
+      sort_by: 'popularity.desc',
+      with_release_type: '2|3',
+    });
+    const more = await fetchPages(DISCOVER_ENDPOINT, 5, moreQ).catch(() => []);
+    movies = dedupeById([...movies, ...(more || [])]);
+    filtered = movies
+      .filter(m => validDateStr(m.release_date))
+      .filter(m => m.release_date.slice(0,4) === String(year))
+      .filter(m => m.release_date >= today)
+      .filter(m => !np.has(m.id));
+  }
+
+  console.log(movies.map (m => m.release_date));
+
+  // 정렬 + 15개만 렌더
+  filtered.sort((a,b) => a.release_date.localeCompare(b.release_date));
+  const finalList = filtered.slice(0, minNeeded);
+
+  console.log(finalList.map (f => f.release_date));
+
+  track.innerHTML = "";
+  if (!finalList.length) {
+    track.innerHTML = `<li style="width:100%;color:#aaa;text-align:center;padding:12px">
+      No upcoming movies right now.
+    </li>`;
+    return;
+  }
+  renderList("upcomingMovies", finalList);
+}
+
 
 async function saveToWatchlist(movie) {
     const token = localStorage.getItem("token");
@@ -114,17 +215,15 @@ function setupCarouselButtons() {
     const nextBtn = section.querySelector(".next-btn");
     if (!prevBtn || !nextBtn) return;
 
-    // prevent double-binding
     if (prevBtn.dataset.bound === "1") return;
     prevBtn.dataset.bound = nextBtn.dataset.bound = "1";
 
     let index = 0;
-    const gap = 20; // matches CSS padding/gap
+    const gap = 20;
     const visible = 5;
 
     const itemWidth = () => (track.children[0]?.offsetWidth || 0) + gap;
-    const maxIndex = () =>
-      Math.max(0, track.children.length - visible);
+    const maxIndex  = () => Math.max(0, track.children.length - visible);
 
     const update = () => {
       track.style.transform = `translateX(-${index * itemWidth()}px)`;
@@ -132,21 +231,11 @@ function setupCarouselButtons() {
       nextBtn.style.display = index >= maxIndex() ? "none" : "inline-block";
     };
 
-    prevBtn.addEventListener("click", () => {
-      index = Math.max(0, index - 1);
-      update();
-    });
+    prevBtn.addEventListener("click", () => { index = Math.max(0, index - 1); update(); });
+    nextBtn.addEventListener("click", () => { index = Math.min(maxIndex(), index + 1); update(); });
 
-    nextBtn.addEventListener("click", () => {
-      index = Math.min(maxIndex(), index + 1);
-      update();
-    });
-
-    // initial state
     prevBtn.style.display = "none";
     update();
-
-    // reflow on resize
     window.addEventListener("resize", update);
   });
 }
@@ -257,6 +346,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (typeof window.checkUserStatus === "function") window.checkUserStatus();
   if (typeof window.displaySearchHistory === "function") window.displaySearchHistory();
 
+  const popularTask = document.getElementById("popularMovies") ? displayPopular() : Promise.resolve();
+  
   // chat welcome
   const chatLog = document.getElementById("chat-log");
   if (chatLog) {
@@ -267,9 +358,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // sections (await to ensure DOM widths are correct when wiring carousel)
-  if (document.getElementById("popularMovies")) await displayPopular();
-  if (document.getElementById("nowPlayingMovies")) await displaySectionMovies("movie/now_playing", "nowPlayingMovies");
-  if (document.getElementById("upcomingMovies")) await displaySectionMovies("movie/upcoming", "upcomingMovies");
+  if (document.getElementById("nowPlayingMovies")) {
+    await displayNowPlaying();
+  }
+  if (document.getElementById("upcomingMovies")) {
+    await displayComingSoonHome(15);
+  }
+
+  await popularTask;
 
   // wire buttons once items are in the tracks
   setupCarouselButtons();
