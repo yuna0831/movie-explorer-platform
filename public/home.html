@@ -546,13 +546,15 @@ p {
           logoutBox.style.display = "none";
         });
       }
+      if (window.wireHeaderSearch) window.wireHeaderSearch();
       setupCarouselButtons();
         
       });
   </script>
 
   
-  <script src="script.js"></script>
-  <script src="/header.js"></script>
+<script src="/header.js" defer></script>
+<script src="/script.js" defer></script>
+
 </body>
 </html>

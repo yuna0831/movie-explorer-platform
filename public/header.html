@@ -1,89 +1,98 @@
-<!-- header.html -->
-<header style="background-color: #1f1f1f; padding: 20px;">
+<header style="background-color:#1f1f1f; padding:20px;">
   <style>
-    .moovy-search-container {
-  display: flex;
-  align-items: center;
-  background-color: #1c1c1c;
-  border-radius: 50px;
-  padding: 5px 10px;
-  width: 280px;
-  border: 1px solid #444;
-}
+    /* ====== Search bar ====== */
+    .moovy-search-wrap{ position:relative; width:340px; }
+    .moovy-search-container{
+      display:flex; align-items:center; gap:8px;
+      background:#1c1c1c; border-radius:50px; padding:6px 10px; width:100%;
+      border:1px solid #444;
+    }
+    .moovy-search-container .scope{
+      background:transparent; border:0; color:#bbb; font-size:12px; cursor:pointer;
+    }
+    .moovy-search-container input{
+      flex:1; background:transparent; border:0; outline:none; color:#fff;
+      font-size:14px; padding:8px 10px; font-family:'Poppins','Noto Sans KR',sans-serif;
+    }
+    .moovy-search-container input::placeholder{ color:#888; }
+    .moovy-search-container .go{
+      background:#ff4757; border:0; color:#fff; padding:8px 12px; border-radius:50%;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      transition:background-color .2s ease;
+    }
+    .moovy-search-container .go:hover{ background:#e53f4d; }
 
-.moovy-search-container input[type="text"] {
-  flex-grow: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: white;
-  font-size: 14px;
-  padding: 8px 10px;
-  font-family: 'Poppins', 'Noto Sans KR', sans-serif;
-}
-
-.moovy-search-container input::placeholder {
-  color: #888;
-}
-
-.moovy-search-container button {
-  background-color: #ff4757;
-  border: none;
-  color: white;
-  padding: 8px 12px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s ease;
-}
-
-.moovy-search-container button:hover {
-  background-color: #e53f4d;
-}
-
+    /* ====== Dropdown ====== */
+    .search-dropdown{
+      position:absolute; top:110%; left:0; right:0;
+      background:#141414; border:1px solid #333; border-radius:12px;
+      box-shadow:0 16px 32px rgba(0,0,0,.5); padding:6px 0; z-index:2000;
+    }
+    .dropdown-head{
+      display:flex; justify-content:space-between; align-items:center;
+      padding:10px 12px; color:#aaa; font-size:12.5px; letter-spacing:.3px;
+    }
+    .dropdown-head .clear{
+      background:transparent; border:0; color:#ff6b81; font-size:12px; cursor:pointer;
+    }
+    .suggest-list{ list-style:none; margin:0; padding:4px 0; max-height:280px; overflow:auto; }
+    .suggest-item{
+      display:flex; align-items:center; gap:10px; padding:12px 12px; cursor:pointer;
+      color:#e6e6e6; font-size:14px;
+    }
+    .suggest-item i{ color:#ff6b81; opacity:.9; }
+    .suggest-item:hover, .suggest-item.active{ background:#1f1f1f; }
   </style>
-    <div class="header-container" style="max-width: 1100px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px;">
-      
-      <!-- Left: Logo -->
-      <div>
-        <a href="/home.html" style="text-decoration: none;">
-          <div style="font-size: 28px; font-weight: bold; color: #ff4757;">Moovy</div>
-        </a>
-        <div style="font-size: 14px; color: #aaa;">Finding the one movie that fits your day.</div>
-      </div>
-  
-      <!-- Center: Search Bar -->
+
+  <div class="header-container"
+       style="max-width:1100px; margin:0 auto; display:flex; flex-wrap:wrap;
+              justify-content:space-between; align-items:center; gap:20px;">
+
+    <!-- Left: Logo -->
+    <div>
+      <a href="/home.html" style="text-decoration:none;">
+        <div style="font-size:28px; font-weight:bold; color:#ff4757;">Moovy</div>
+      </a>
+      <div style="font-size:14px; color:#aaa;">Finding the one movie that fits your day.</div>
+    </div>
+
+    <!-- Center: Search (with dropdown) -->
+    <div class="moovy-search-wrap">
       <div class="moovy-search-container">
-        <input
-          type="text"
-          id="movieTitle"
-          placeholder="Search a movie title"
-          onclick="toggleHistory(true)"
-          onblur="hideHistory()"
-        />
-        <button onclick="searchMovie()"><i class="fas fa-search"></i></button>
+        <input id="movieTitle" type="text" placeholder="Search a movie title" autocomplete="off" />
+        <button class="go" type="button" onclick="searchMovie()"><i class="fas fa-search"></i></button>
       </div>
-  
-      <!-- Right: Nav + User -->
-      <div class="header-right" style="display: flex; align-items: center; gap: 20px;">
-        <nav style="display: flex; gap: 15px;">
-          <a href="/all-movies.html" style="color: #fff; text-decoration: none; font-size: 14px;">Movies</a>
-          <a href="/comment" style="color: #fff; text-decoration: none; font-size: 14px;">Review Lounge</a>
-          <a href="/watchlist" style="color: #fff; text-decoration: none; font-size: 14px;">Watch list</a>
-          <a id="loginLink" href="/user" style="color: #fff; text-decoration: none; font-size: 14px;">Log in</a>
-        </nav>
-  
-        <div class="user-dropdown" id="userDropdown" style="display: none; position: relative;">
-          <span id="userGreeting" style="color: white;"></span>
-          <div class="logout-hidden" style="display: none; position: absolute; top: 100%; left: 0; background-color: #1f1f1f; padding: 8px; border: 1px solid #444; border-radius: 6px; z-index: 100;">
-            <button onclick="logout()" style="background-color: #ff4757; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">Logout</button>
-          </div>
+
+      <!-- dropdown -->
+      <div id="searchDropdown" class="search-dropdown" hidden>
+        <div class="dropdown-head">
+          <span>SEARCH HISTORY</span>
+          <button id="clearHistoryBtn" class="clear" type="button">Clear</button>
+        </div>
+        <ul id="historyList" class="suggest-list"></ul>
+      </div>
+    </div>
+
+    <!-- Right: Nav + User -->
+    <div class="header-right" style="display:flex; align-items:center; gap:20px;">
+      <nav style="display:flex; gap:15px;">
+        <a href="/all-movies.html" style="color:#fff; text-decoration:none; font-size:14px;">Movies</a>
+        <a href="/comment" style="color:#fff; text-decoration:none; font-size:14px;">Review Lounge</a>
+        <a href="/watchlist" style="color:#fff; text-decoration:none; font-size:14px;">Watch list</a>
+        <a id="loginLink" href="/user" style="color:#fff; text-decoration:none; font-size:14px;">Log in</a>
+      </nav>
+
+      <div class="user-dropdown" id="userDropdown" style="display:none; position:relative;">
+        <span id="userGreeting" style="color:white;"></span>
+        <div class="logout-hidden"
+             style="display:none; position:absolute; top:100%; left:0; background-color:#1f1f1f;
+                    padding:8px; border:1px solid #444; border-radius:6px; z-index:100;">
+          <button onclick="logout()"
+                  style="background-color:#ff4757; color:white; border:none; padding:6px 12px;
+                         border-radius:4px; cursor:pointer;">Logout</button>
         </div>
       </div>
-  
     </div>
-  </header>
-  
+
+  </div>
+</header>
