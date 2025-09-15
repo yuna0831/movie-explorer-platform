@@ -288,14 +288,7 @@ function setupCarouselButtons() {
   }
   window.toggleChat = toggleChat;
   
-  
-  window.onload = () => {
-    const chatLog = document.getElementById("chat-log");
-    const welcome = document.createElement("div");
-    welcome.innerHTML = `<strong>🤖 Moovy:</strong> Hi! How's your day? Tell me how you're feeling or what kind of movie you're in the mood for! 🎬`;
-    chatLog.appendChild(welcome);
-  };
-  
+
   
 async function sendMessage() {
   const input = document.getElementById("chat-input");
