@@ -84,8 +84,6 @@ Here are example screenshots of the platform in action:
   ![Log in](docs/screenshots/login2.png)  
 
 
-
-
 ## Setup  
 
 ### 1. Clone the repository
