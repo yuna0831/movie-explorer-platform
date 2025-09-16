@@ -18,6 +18,7 @@
     "dotenv": "^17.2.0",
     "express": "^4.21.2",
     "google-auth-library": "^10.2.1",
+    "jsonwebtoken": "^9.0.2",
     "mdb-react-ui-kit": "^9.0.0",
     "mysql2": "^3.14.1",
     "openai": "^5.10.2"
