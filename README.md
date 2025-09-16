@@ -50,6 +50,11 @@ Key motivations:
 
 ---
 
+## Live Demo  
+
+👉 [View the Project Here](https://movie-explorer-platform-production.up.railway.app/)  
+
+---
 
 ## Project Demo  
 
