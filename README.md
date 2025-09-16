@@ -56,8 +56,8 @@ Key motivations:
 Here are example screenshots of the platform in action:  
 
 - **Home Page**  
-  ![Home Page](docs/screenshots/home.png)  
-  ![Home Page](docs/screenshots/home2.png)  
+  ![Home Page](docs/screenshots/homepage.png)  
+  ![Home Page](docs/screenshots/homepage2.png)  
 
 - **Chatbot**  
   ![Chatbot](docs/screenshots/chatbot.png)  
