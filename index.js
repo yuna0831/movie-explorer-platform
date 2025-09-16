@@ -1,19 +1,35 @@
-require("dotenv").config();
-console.log("OPENAI_API_KEY:", process.env.OPENAI_API_KEY);
-const express = require("express");
-const mysql = require("mysql2");
-const bcrypt = require("bcryptjs");
-const cors = require("cors");
-const path = require("path");
-const jwt = require("jsonwebtoken");
-const { OAuth2Client } = require('google-auth-library');
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+// 기존 import 들 위에는 그대로 두고
+import dotenv from "dotenv";
+dotenv.config();
+
+import express from "express";
+import mysql from "mysql2/promise";
+import bcrypt from "bcryptjs";
+import cors from "cors";
+import path from "path";
+import jwt from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
+import axios from "axios";
+
+// ⬇️ 여기 추가
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 8080;
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-const axios = require("axios"); // 맨 위에 추가 (안 돼 있으면 설치: npm install axios)
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Example route
+
+
 
 // TMDB 검색 프록시
 app.get("/api/search", async (req, res) => {
@@ -242,21 +258,17 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public"))); // serves static files (HTML, CSS, JS)
 
 // MySQL Connection
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "Love1019^^",   
-  database: "movie_app"
-}).promise();
-
-db.connect(err => {
-  if (err) {
-    console.error("MySQL connection failed:", err);
-    return;
-  }
-  console.log("Connected to MySQL");
+// MySQL Connection (Railway)
+const db = await mysql.createConnection({
+  host: process.env.MYSQLHOST,
+  user: process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE,
+  port: process.env.MYSQLPORT
 });
 
+console.log("✅ Connected to Railway MySQL!");
+export default db;
 // Serve HTML pages
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "home.html"));
@@ -921,6 +933,6 @@ app.post("/api/google-login", async (req, res) => {
 
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });

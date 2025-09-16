@@ -141,7 +141,7 @@
         loginBtn.textContent = "Signing in...";
         const sp = document.createElement("span"); sp.className="spinner"; loginBtn.appendChild(sp);
 
-        const r = await fetch("/api/login", {
+        const r = await fetch("/api/user", {
           method:"POST", headers:{ "Content-Type":"application/json" },
           body: JSON.stringify({ email, password })
         });
@@ -151,7 +151,7 @@
         localStorage.setItem("token", body.token);
         if (body.username) localStorage.setItem("username", body.username);
         setMsg("Login successful! Redirecting…", true);
-        setTimeout(() => { location.href = "/"; }, 1500);   // 홈으로, 너무 급하지 않게
+        setTimeout(() => { location.href = "/home.html"; }, 1500);   // 홈으로, 너무 급하지 않게
       }catch(err){
         console.error(err); setMsg(err.message, false);
       }finally{
